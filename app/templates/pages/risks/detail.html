@@ -100,6 +100,61 @@
         </div>
     </div>
 
+    <!-- NSM Grunnprinsipper -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-4" style="opacity: 0;">
+        <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-3">
+                <div class="w-8 h-8 rounded-lg bg-purple-500/10 border border-purple-500/20 flex items-center justify-center">
+                    <svg class="w-4 h-4 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <h3 class="text-sm font-semibold text-slate-400 uppercase tracking-wider">NSM Grunnprinsipper</h3>
+            </div>
+            <button onclick="openNsmModal()" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium text-purple-400 bg-purple-500/10 border border-purple-500/20 hover:bg-purple-500/20 transition-all">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Legg til
+            </button>
+        </div>
+        <div id="nsm-mappings-list" class="space-y-2">
+            <div class="animate-pulse">
+                <div class="h-10 bg-slate-700/50 rounded-lg"></div>
+            </div>
+        </div>
+        <p id="nsm-empty-state" class="hidden text-sm text-slate-500 italic py-4">
+            Ingen NSM-prinsipper er koblet til denne risikoen. Klikk "Legg til" for å koble prinsipper.
+        </p>
+    </div>
+
+    <!-- NSM Modal -->
+    <div id="nsm-modal" class="fixed inset-0 z-50 hidden">
+        <div class="fixed inset-0 bg-black/60 backdrop-blur-sm" onclick="closeNsmModal()"></div>
+        <div class="fixed inset-0 flex items-center justify-center p-4">
+            <div class="bg-slate-800 border border-slate-700 rounded-2xl shadow-2xl w-full max-w-lg max-h-[80vh] overflow-hidden">
+                <div class="px-6 py-4 border-b border-slate-700">
+                    <h3 class="text-lg font-semibold text-white">Legg til NSM Grunnprinsipp</h3>
+                    <p class="text-sm text-slate-400 mt-1">Velg prinsipper som adresserer denne risikoen</p>
+                </div>
+                <div class="px-6 py-4 overflow-y-auto max-h-[50vh]">
+                    <div id="nsm-principles-list" class="space-y-2">
+                        <div class="animate-pulse space-y-2">
+                            <div class="h-12 bg-slate-700/50 rounded-lg"></div>
+                            <div class="h-12 bg-slate-700/50 rounded-lg"></div>
+                            <div class="h-12 bg-slate-700/50 rounded-lg"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-slate-700 flex justify-end gap-3">
+                    <button onclick="closeNsmModal()" class="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 bg-slate-700 hover:bg-slate-600 transition-colors">
+                        Lukk
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Actions -->
     <div class="flex flex-wrap items-center justify-between gap-4 pt-4 animate-slide-up stagger-4" style="opacity: 0;">
         <a href="/risikoer" class="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-medium text-slate-300 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-700 hover:text-white transition-all">
@@ -129,8 +184,13 @@
 const RISK_ID = {{ risk_id }};
 let currentRisk = null;
 
+let allNsmPrinciples = [];
+let currentNsmMappings = [];
+
 function initRiskDetail() {
     loadRiskDetail();
+    loadNsmMappings();
+    loadAllNsmPrinciples();
 }
 
 async function loadRiskDetail() {
@@ -299,6 +359,180 @@ function deleteRisk() {
                     alert('Feil ved sletting av risiko');
                 }
             });
+    }
+}
+
+// NSM Mapping functions
+async function loadNsmMappings() {
+    try {
+        const response = await fetch(`/api/v1/risks/${RISK_ID}/nsm-mappings`);
+        currentNsmMappings = await response.json();
+        renderNsmMappings();
+    } catch (error) {
+        console.error('Failed to load NSM mappings:', error);
+    }
+}
+
+async function loadAllNsmPrinciples() {
+    try {
+        const response = await fetch('/api/v1/risks/nsm-principles/all');
+        allNsmPrinciples = await response.json();
+    } catch (error) {
+        console.error('Failed to load NSM principles:', error);
+    }
+}
+
+function renderNsmMappings() {
+    const container = document.getElementById('nsm-mappings-list');
+    const emptyState = document.getElementById('nsm-empty-state');
+
+    if (currentNsmMappings.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+    }
+
+    emptyState.classList.add('hidden');
+
+    const categoryColors = {
+        '1. Identifisere': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400' },
+        '2. Beskytte': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+        '3. Oppdage': { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400' },
+        '4. Håndtere og gjenopprette': { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400' }
+    };
+
+    container.innerHTML = currentNsmMappings.map(mapping => {
+        const colors = categoryColors[mapping.category] || { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400' };
+        return `
+            <div class="flex items-center justify-between p-3 rounded-lg ${colors.bg} border ${colors.border} group">
+                <div class="flex items-center gap-3">
+                    <span class="inline-flex items-center justify-center w-10 h-10 rounded-lg bg-slate-800/50 text-sm font-mono font-bold ${colors.text}">
+                        ${mapping.code}
+                    </span>
+                    <div>
+                        <p class="text-sm font-medium text-slate-200">${mapping.title}</p>
+                        <p class="text-xs text-slate-500">${mapping.category}</p>
+                    </div>
+                </div>
+                <button onclick="removeNsmMapping(${mapping.principle_id})"
+                        class="opacity-0 group-hover:opacity-100 p-1.5 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all"
+                        title="Fjern kobling">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+        `;
+    }).join('');
+}
+
+function openNsmModal() {
+    const modal = document.getElementById('nsm-modal');
+    modal.classList.remove('hidden');
+    renderNsmPrinciplesList();
+}
+
+function closeNsmModal() {
+    document.getElementById('nsm-modal').classList.add('hidden');
+}
+
+function renderNsmPrinciplesList() {
+    const container = document.getElementById('nsm-principles-list');
+    const mappedIds = new Set(currentNsmMappings.map(m => m.principle_id));
+
+    const categoryColors = {
+        '1. Identifisere': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', hoverBg: 'hover:bg-blue-500/20' },
+        '2. Beskytte': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', hoverBg: 'hover:bg-emerald-500/20' },
+        '3. Oppdage': { bg: 'bg-amber-500/10', border: 'border-amber-500/30', text: 'text-amber-400', hoverBg: 'hover:bg-amber-500/20' },
+        '4. Håndtere og gjenopprette': { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', hoverBg: 'hover:bg-red-500/20' }
+    };
+
+    // Group by category
+    const grouped = {};
+    allNsmPrinciples.forEach(p => {
+        if (!grouped[p.category]) grouped[p.category] = [];
+        grouped[p.category].push(p);
+    });
+
+    let html = '';
+    for (const [category, principles] of Object.entries(grouped)) {
+        const colors = categoryColors[category] || { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400', hoverBg: 'hover:bg-slate-500/20' };
+
+        html += `<div class="mb-4">
+            <h4 class="text-xs font-semibold ${colors.text} uppercase tracking-wider mb-2">${category}</h4>
+            <div class="space-y-1">`;
+
+        principles.forEach(p => {
+            const isLinked = mappedIds.has(p.id);
+            if (isLinked) {
+                html += `
+                    <div class="flex items-center gap-3 p-2 rounded-lg bg-slate-700/30 border border-slate-600/30 opacity-50">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded bg-slate-700 text-xs font-mono font-bold text-slate-400">
+                            ${p.code}
+                        </span>
+                        <span class="text-sm text-slate-400 flex-1">${p.title}</span>
+                        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <button onclick="addNsmMapping(${p.id})"
+                            class="w-full flex items-center gap-3 p-2 rounded-lg ${colors.bg} border ${colors.border} ${colors.hoverBg} transition-all text-left">
+                        <span class="inline-flex items-center justify-center w-8 h-8 rounded bg-slate-800/50 text-xs font-mono font-bold ${colors.text}">
+                            ${p.code}
+                        </span>
+                        <span class="text-sm text-slate-300 flex-1">${p.title}</span>
+                        <svg class="w-4 h-4 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </button>
+                `;
+            }
+        });
+
+        html += '</div></div>';
+    }
+
+    container.innerHTML = html;
+}
+
+async function addNsmMapping(principleId) {
+    try {
+        const response = await fetch(`/api/v1/risks/${RISK_ID}/nsm-mappings/${principleId}`, {
+            method: 'POST'
+        });
+
+        if (response.ok) {
+            await loadNsmMappings();
+            renderNsmPrinciplesList();
+        } else {
+            const error = await response.json();
+            alert(error.detail || 'Feil ved tillegging av NSM-prinsipp');
+        }
+    } catch (error) {
+        console.error('Failed to add NSM mapping:', error);
+        alert('Feil ved tillegging av NSM-prinsipp');
+    }
+}
+
+async function removeNsmMapping(principleId) {
+    if (!confirm('Fjerne koblingen til dette NSM-prinsippet?')) return;
+
+    try {
+        const response = await fetch(`/api/v1/risks/${RISK_ID}/nsm-mappings/${principleId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            await loadNsmMappings();
+        } else {
+            alert('Feil ved fjerning av NSM-prinsipp');
+        }
+    } catch (error) {
+        console.error('Failed to remove NSM mapping:', error);
+        alert('Feil ved fjerning av NSM-prinsipp');
     }
 }
 
