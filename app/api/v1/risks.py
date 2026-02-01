@@ -303,7 +303,7 @@ async def get_risk_nsm_mappings(
 
     mappings_result = await db.execute(
         select(NSMMapping, NSMPrinciple)
-        .join(NSMPrinciple)
+        .join(NSMPrinciple, NSMMapping.nsm_principle_id == NSMPrinciple.id)
         .where(NSMMapping.risk_id == risk_id)
         .order_by(NSMPrinciple.sort_order)
     )
@@ -311,14 +311,14 @@ async def get_risk_nsm_mappings(
 
     return [
         {
-            "mapping_id": m.NSMMapping.id,
-            "principle_id": p.id,
-            "code": p.code,
-            "title": p.title,
-            "category": p.category.value,
-            "notes": m.NSMMapping.notes,
+            "mapping_id": mapping.id,
+            "principle_id": principle.id,
+            "code": principle.code,
+            "title": principle.title,
+            "category": principle.category.value,
+            "notes": mapping.notes,
         }
-        for m, p in [(row[0], row[1]) for row in mappings]
+        for mapping, principle in mappings
     ]
 
 
