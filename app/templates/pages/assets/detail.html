@@ -1,0 +1,52 @@
+{% extends "base.html" %}
+
+{% block page_title %}Asset{% endblock %}
+
+{% block content %}
+<div id="asset-detail"
+     hx-get="/api/v1/assets/{{ asset_id }}"
+     hx-trigger="load"
+     hx-target="#asset-detail"
+     hx-swap="innerHTML">
+    <div class="animate-pulse">
+        <div class="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+    </div>
+</div>
+
+<script>
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.pathInfo.requestPath === '/api/v1/assets/{{ asset_id }}' && evt.detail.successful) {
+        const asset = JSON.parse(evt.detail.xhr.responseText);
+        evt.detail.target.innerHTML = `
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-900">${asset.name}</h2>
+                </div>
+                <div class="px-6 py-4 grid grid-cols-2 gap-4">
+                    <div>
+                        <p class="text-sm text-gray-500">Type</p>
+                        <p class="font-medium">${asset.asset_type}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Kategori</p>
+                        <p class="font-medium">${asset.category}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Kritikalitet</p>
+                        <p class="font-medium">${asset.criticality_label}</p>
+                    </div>
+                    <div>
+                        <p class="text-sm text-gray-500">Lokasjon</p>
+                        <p class="font-medium">${asset.location || '-'}</p>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200">
+                    <a href="/assets" class="text-blue-600 hover:text-blue-800">Tilbake til liste</a>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

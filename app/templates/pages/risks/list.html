@@ -1,0 +1,722 @@
+{% extends "base.html" %}
+
+{% block page_title %}Risikoer{% endblock %}
+
+{% block header %}
+<header class="border-b border-slate-800/50">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="animate-fade-in">
+                <h1 class="text-3xl font-bold tracking-tight text-white">Risikoer</h1>
+                <p class="mt-1 text-sm text-slate-400">Administrer og overvåk identifiserte risikoer</p>
+            </div>
+            <button onclick="openRiskModal()"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-900 bg-gradient-to-r from-accent-copper to-accent-copper-glow shadow-lg hover:shadow-accent-copper/25 transition-all animate-fade-in" style="animation-delay: 0.2s; opacity: 0;">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ny risiko
+            </button>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Active Matrix Filter Banner -->
+    <div id="matrix-filter-banner" class="hidden rounded-2xl bg-amber-500/10 border border-amber-500/30 p-4 animate-slide-up" style="opacity: 0;">
+        <div class="flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/20 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"/>
+                    </svg>
+                </div>
+                <div>
+                    <p class="text-sm font-medium text-amber-300">Filtrert fra risikomatrise</p>
+                    <p id="matrix-filter-description" class="text-xs text-amber-400/70">Viser risikoer med sannsynlighet X og konsekvens Y</p>
+                </div>
+            </div>
+            <button onclick="clearMatrixFilter()" class="px-4 py-2 rounded-xl text-sm font-medium text-amber-400 bg-amber-500/10 border border-amber-500/30 hover:bg-amber-500/20 transition-all">
+                Fjern filter
+            </button>
+        </div>
+    </div>
+
+    <!-- Filters -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 animate-slide-up stagger-1" style="opacity: 0;">
+        <div class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Status</label>
+                <select id="status-filter" onchange="filterRisks()"
+                        class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-slate-200 text-sm py-2.5 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all">
+                    <option value="">Alle statuser</option>
+                    <option value="identifisert">Identifisert</option>
+                    <option value="under_vurdering">Under vurdering</option>
+                    <option value="akseptert">Akseptert</option>
+                    <option value="redusert">Redusert</option>
+                    <option value="lukket">Lukket</option>
+                </select>
+            </div>
+            <div class="flex-1 min-w-[150px]">
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Prosjekt</label>
+                <select id="project-filter" onchange="filterRisks()"
+                        class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-slate-200 text-sm py-2.5 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all">
+                    <option value="">Alle prosjekter</option>
+                </select>
+            </div>
+            <div class="flex-1 min-w-[120px]">
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Sannsynlighet</label>
+                <select id="likelihood-filter" onchange="filterRisks()"
+                        class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-slate-200 text-sm py-2.5 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all">
+                    <option value="">Alle</option>
+                    <option value="1">1 - Svært lav</option>
+                    <option value="2">2 - Lav</option>
+                    <option value="3">3 - Middels</option>
+                    <option value="4">4 - Høy</option>
+                    <option value="5">5 - Svært høy</option>
+                </select>
+            </div>
+            <div class="flex-1 min-w-[120px]">
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Konsekvens</label>
+                <select id="consequence-filter" onchange="filterRisks()"
+                        class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-slate-200 text-sm py-2.5 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all">
+                    <option value="">Alle</option>
+                    <option value="1">1 - Svært lav</option>
+                    <option value="2">2 - Lav</option>
+                    <option value="3">3 - Middels</option>
+                    <option value="4">4 - Høy</option>
+                    <option value="5">5 - Svært høy</option>
+                </select>
+            </div>
+            <button onclick="clearAllFilters()" class="px-4 py-2.5 rounded-xl bg-slate-700/50 border border-slate-600/50 text-slate-300 text-sm font-medium hover:bg-slate-700 hover:text-white transition-all" title="Nullstill filtre">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Risk List -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 overflow-hidden animate-slide-up stagger-2" style="opacity: 0;">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-slate-700/50">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">#</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Risiko</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Prosjekt</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">S x K</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Score</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Mål</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Handlinger</th>
+                    </tr>
+                </thead>
+                <tbody id="risks-table-body"
+                       class="divide-y divide-slate-700/30"
+                       hx-get="/api/v1/risks"
+                       hx-trigger="load"
+                       hx-target="#risks-table-body"
+                       hx-swap="innerHTML">
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-8 h-8 border-2 border-accent-copper/30 border-t-accent-copper rounded-full animate-spin"></div>
+                                <span class="text-sm text-slate-500">Laster risikoer...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Risk Modal -->
+<div id="risk-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeRiskModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-slate-800 border border-slate-700/50 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slide-up">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/80">
+                <h3 class="text-lg font-semibold text-white" id="modal-title">Ny risiko</h3>
+                <button onclick="closeRiskModal()" class="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="overflow-y-auto max-h-[calc(90vh-140px)]">
+                <form id="risk-form" class="p-6 space-y-5">
+                    <input type="hidden" id="risk-id" name="id">
+
+                    <!-- Project Selection -->
+                    <div id="project-selection-container">
+                        <label for="project_id" class="block text-sm font-medium text-slate-300 mb-2">Prosjekt *</label>
+                        <select id="project_id" name="project_id" required
+                                class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all">
+                            <option value="">Velg prosjekt...</option>
+                        </select>
+                        <p id="project-info" class="mt-2 text-xs text-slate-500 hidden">
+                            <span class="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                                </svg>
+                                <span id="project-info-text"></span>
+                            </span>
+                        </p>
+                    </div>
+
+                    <div>
+                        <label for="title" class="block text-sm font-medium text-slate-300 mb-2">Tittel *</label>
+                        <input type="text" id="title" name="title" required
+                               class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all"
+                               placeholder="Kort beskrivende tittel">
+                    </div>
+
+                    <div>
+                        <label for="description" class="block text-sm font-medium text-slate-300 mb-2">Beskrivelse</label>
+                        <textarea id="description" name="description" rows="3"
+                                  class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all resize-none"
+                                  placeholder="Detaljert beskrivelse av risikoen..."></textarea>
+                    </div>
+
+                    <div>
+                        <label for="existing_controls" class="block text-sm font-medium text-slate-300 mb-2">Eksisterende tiltak</label>
+                        <textarea id="existing_controls" name="existing_controls" rows="2"
+                                  class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all resize-none"
+                                  placeholder="Tiltak som allerede er på plass..."></textarea>
+                    </div>
+
+                    <!-- Risk Assessment -->
+                    <div class="p-4 rounded-xl bg-slate-900/30 border border-slate-700/30 space-y-4">
+                        <h4 class="text-sm font-semibold text-white">Nåværende risikovurdering</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="likelihood" class="block text-xs font-medium text-slate-400 mb-2">Sannsynlighet *</label>
+                                <select id="likelihood" name="likelihood" required onchange="updateCurrentRiskDisplay()"
+                                        class="w-full rounded-xl bg-slate-800/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-accent-copper/50 transition-all">
+                                    <option value="1">1 - Svært lav</option>
+                                    <option value="2">2 - Lav</option>
+                                    <option value="3" selected>3 - Middels</option>
+                                    <option value="4">4 - Høy</option>
+                                    <option value="5">5 - Svært høy</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="consequence" class="block text-xs font-medium text-slate-400 mb-2">Konsekvens *</label>
+                                <select id="consequence" name="consequence" required onchange="updateCurrentRiskDisplay()"
+                                        class="w-full rounded-xl bg-slate-800/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-accent-copper/50 transition-all">
+                                    <option value="1">1 - Svært lav</option>
+                                    <option value="2">2 - Lav</option>
+                                    <option value="3" selected>3 - Middels</option>
+                                    <option value="4">4 - Høy</option>
+                                    <option value="5">5 - Svært høy</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-slate-700/30">
+                            <span class="text-sm text-slate-400">Risikonivå:</span>
+                            <p id="current-risk-display" class="text-lg font-bold font-mono text-amber-400">3 x 3 = 9</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="proposed_measures" class="block text-sm font-medium text-slate-300 mb-2">Foreslatte tiltak</label>
+                        <textarea id="proposed_measures" name="proposed_measures" rows="2"
+                                  class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-accent-copper/50 focus:ring-1 focus:ring-accent-copper/20 transition-all resize-none"
+                                  placeholder="Tiltak som skal implementeres..."></textarea>
+                    </div>
+
+                    <!-- Target Risk -->
+                    <div class="p-4 rounded-xl bg-emerald-500/5 border border-emerald-500/20 space-y-4">
+                        <h4 class="text-sm font-semibold text-emerald-400">Mål-risikonivå (etter tiltak)</h4>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label for="target_likelihood" class="block text-xs font-medium text-slate-400 mb-2">Mål-sannsynlighet</label>
+                                <select id="target_likelihood" name="target_likelihood" onchange="updateTargetRiskDisplay()"
+                                        class="w-full rounded-xl bg-slate-800/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-emerald-500/50 transition-all">
+                                    <option value="">Ikke satt</option>
+                                    <option value="1">1 - Svært lav</option>
+                                    <option value="2">2 - Lav</option>
+                                    <option value="3">3 - Middels</option>
+                                    <option value="4">4 - Høy</option>
+                                    <option value="5">5 - Svært høy</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label for="target_consequence" class="block text-xs font-medium text-slate-400 mb-2">Mål-konsekvens</label>
+                                <select id="target_consequence" name="target_consequence" onchange="updateTargetRiskDisplay()"
+                                        class="w-full rounded-xl bg-slate-800/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-emerald-500/50 transition-all">
+                                    <option value="">Ikke satt</option>
+                                    <option value="1">1 - Svært lav</option>
+                                    <option value="2">2 - Lav</option>
+                                    <option value="3">3 - Middels</option>
+                                    <option value="4">4 - Høy</option>
+                                    <option value="5">5 - Svært høy</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div id="target-risk-container" class="hidden flex items-center justify-between p-3 rounded-lg bg-slate-800/50 border border-emerald-500/20">
+                            <span class="text-sm text-slate-400">Mål-risikonivå:</span>
+                            <p id="target-risk-display" class="text-lg font-bold font-mono text-emerald-400"></p>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="risk_type" class="block text-sm font-medium text-slate-300 mb-2">Type</label>
+                            <select id="risk_type" name="risk_type"
+                                    class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-accent-copper/50 transition-all">
+                                <option value="teknisk">Teknisk</option>
+                                <option value="operasjonell">Operasjonell</option>
+                                <option value="organisatorisk">Organisatorisk</option>
+                                <option value="ekstern">Ekstern</option>
+                                <option value="naturhendelse">Naturhendelse</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="status" class="block text-sm font-medium text-slate-300 mb-2">Status</label>
+                            <select id="status" name="status"
+                                    class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-accent-copper/50 transition-all">
+                                <option value="identifisert">Identifisert</option>
+                                <option value="under_vurdering">Under vurdering</option>
+                                <option value="akseptert">Akseptert</option>
+                                <option value="redusert">Redusert</option>
+                                <option value="overfort">Overført</option>
+                                <option value="lukket">Lukket</option>
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-slate-700/50 flex justify-end gap-3 bg-slate-800/80">
+                <button onclick="closeRiskModal()"
+                        class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-300 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-700 hover:text-white transition-all">
+                    Avbryt
+                </button>
+                <button onclick="saveRisk()"
+                        class="px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-900 bg-gradient-to-r from-accent-copper to-accent-copper-glow hover:shadow-lg hover:shadow-accent-copper/25 transition-all">
+                    Lagre
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store projects for lookup
+let projectsCache = [];
+
+// Initialize page
+function initRisksPage() {
+    loadProjectsDropdown();
+    checkUrlParams();
+}
+
+async function loadProjectsDropdown() {
+    try {
+        const response = await fetch('/api/v1/projects');
+        projectsCache = await response.json();
+
+        const select = document.getElementById('project_id');
+        select.innerHTML = '<option value="">Velg prosjekt...</option>';
+
+        projectsCache.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.id;
+            option.textContent = project.name;
+            select.appendChild(option);
+        });
+
+        // Also populate filter dropdown
+        const filterSelect = document.getElementById('project-filter');
+        filterSelect.innerHTML = '<option value="">Alle prosjekter</option>';
+        projectsCache.forEach(project => {
+            const option = document.createElement('option');
+            option.value = project.id;
+            option.textContent = project.name;
+            filterSelect.appendChild(option);
+        });
+    } catch (error) {
+        console.error('Failed to load projects:', error);
+    }
+}
+
+function loadFiltersFromUrl() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const projectId = urlParams.get('project_id');
+    const likelihood = urlParams.get('likelihood');
+    const consequence = urlParams.get('consequence');
+    const targetLikelihood = urlParams.get('target_likelihood');
+    const targetConsequence = urlParams.get('target_consequence');
+
+    // Set filter values from URL
+    if (projectId) {
+        document.getElementById('project-filter').value = projectId;
+    }
+    if (likelihood) {
+        document.getElementById('likelihood-filter').value = likelihood;
+    }
+    if (consequence) {
+        document.getElementById('consequence-filter').value = consequence;
+    }
+
+    // Show matrix filter banner if filtering by likelihood/consequence
+    if ((likelihood && consequence) || (targetLikelihood && targetConsequence)) {
+        const banner = document.getElementById('matrix-filter-banner');
+        const description = document.getElementById('matrix-filter-description');
+
+        if (targetLikelihood && targetConsequence) {
+            description.textContent = `Viser risikoer med mål-sannsynlighet ${targetLikelihood} og mål-konsekvens ${targetConsequence}`;
+        } else {
+            description.textContent = `Viser risikoer med sannsynlighet ${likelihood} og konsekvens ${consequence}`;
+        }
+
+        banner.classList.remove('hidden');
+        banner.style.opacity = '1';
+    }
+
+    // Apply filters if any are set
+    if (projectId || likelihood || consequence || targetLikelihood || targetConsequence) {
+        filterRisks();
+    }
+}
+
+function checkUrlParams() {
+    const urlParams = new URLSearchParams(window.location.search);
+    const action = urlParams.get('action');
+    const projectId = urlParams.get('project_id');
+
+    // Load filters from URL (delayed to ensure dropdowns are populated)
+    setTimeout(() => {
+        loadFiltersFromUrl();
+    }, 100);
+
+    if (action === 'new') {
+        // Small delay to ensure projects are loaded
+        setTimeout(() => {
+            openRiskModal(null, projectId);
+        }, 300);
+    }
+}
+
+function openRiskModal(riskId = null, preselectedProjectId = null) {
+    document.getElementById('risk-modal').classList.remove('hidden');
+    document.getElementById('modal-title').textContent = riskId ? 'Rediger risiko' : 'Ny risiko';
+    document.getElementById('risk-id').value = riskId || '';
+
+    if (riskId) {
+        fetch(`/api/v1/risks/${riskId}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('title').value = data.title;
+                document.getElementById('description').value = data.description || '';
+                document.getElementById('existing_controls').value = data.existing_controls || '';
+                document.getElementById('likelihood').value = data.likelihood;
+                document.getElementById('consequence').value = data.consequence;
+                document.getElementById('target_likelihood').value = data.target_likelihood || '';
+                document.getElementById('target_consequence').value = data.target_consequence || '';
+                document.getElementById('proposed_measures').value = data.proposed_measures || '';
+                document.getElementById('risk_type').value = data.risk_type;
+                document.getElementById('status').value = data.status;
+                document.getElementById('project_id').value = data.project_id || '';
+                updateCurrentRiskDisplay();
+                updateTargetRiskDisplay();
+                updateProjectInfo();
+            });
+    } else {
+        document.getElementById('risk-form').reset();
+
+        // Pre-select project if provided
+        if (preselectedProjectId) {
+            document.getElementById('project_id').value = preselectedProjectId;
+            updateProjectInfo();
+        }
+
+        updateCurrentRiskDisplay();
+        updateTargetRiskDisplay();
+    }
+}
+
+function updateProjectInfo() {
+    const projectId = document.getElementById('project_id').value;
+    const infoContainer = document.getElementById('project-info');
+    const infoText = document.getElementById('project-info-text');
+
+    if (projectId) {
+        const project = projectsCache.find(p => p.id == projectId);
+        if (project) {
+            infoText.textContent = `Risikoen legges til i: ${project.name}`;
+            infoContainer.classList.remove('hidden');
+        }
+    } else {
+        infoContainer.classList.add('hidden');
+    }
+}
+
+// Add event listener for project selection change
+document.addEventListener('DOMContentLoaded', function() {
+    const projectSelect = document.getElementById('project_id');
+    if (projectSelect) {
+        projectSelect.addEventListener('change', updateProjectInfo);
+    }
+});
+
+function closeRiskModal() {
+    document.getElementById('risk-modal').classList.add('hidden');
+}
+
+function updateCurrentRiskDisplay() {
+    const l = parseInt(document.getElementById('likelihood').value);
+    const c = parseInt(document.getElementById('consequence').value);
+    const result = calculateRiskScore(l, c);
+    const colorClass = {
+        'green': 'text-emerald-400',
+        'yellow': 'text-yellow-400',
+        'orange': 'text-orange-400',
+        'red': 'text-red-400'
+    }[result.color];
+    document.getElementById('current-risk-display').innerHTML = `<span class="${colorClass}">${l} x ${c} = ${result.score}</span>`;
+}
+
+function updateTargetRiskDisplay() {
+    const l = document.getElementById('target_likelihood').value;
+    const c = document.getElementById('target_consequence').value;
+    const container = document.getElementById('target-risk-container');
+    const display = document.getElementById('target-risk-display');
+
+    if (l && c) {
+        const result = calculateRiskScore(parseInt(l), parseInt(c));
+        const colorClass = {
+            'green': 'text-emerald-400',
+            'yellow': 'text-yellow-400',
+            'orange': 'text-orange-400',
+            'red': 'text-red-400'
+        }[result.color];
+        display.innerHTML = `<span class="${colorClass}">${l} x ${c} = ${result.score}</span>`;
+        container.classList.remove('hidden');
+    } else {
+        container.classList.add('hidden');
+    }
+}
+
+function saveRisk() {
+    const riskId = document.getElementById('risk-id').value;
+    const projectId = document.getElementById('project_id').value;
+
+    if (!projectId) {
+        alert('Vennligst velg et prosjekt');
+        return;
+    }
+
+    const data = {
+        title: document.getElementById('title').value,
+        description: document.getElementById('description').value,
+        existing_controls: document.getElementById('existing_controls').value,
+        likelihood: parseInt(document.getElementById('likelihood').value),
+        consequence: parseInt(document.getElementById('consequence').value),
+        proposed_measures: document.getElementById('proposed_measures').value,
+        risk_type: document.getElementById('risk_type').value,
+        status: document.getElementById('status').value,
+        project_id: parseInt(projectId),
+    };
+
+    const targetL = document.getElementById('target_likelihood').value;
+    const targetC = document.getElementById('target_consequence').value;
+    if (targetL) data.target_likelihood = parseInt(targetL);
+    if (targetC) data.target_consequence = parseInt(targetC);
+
+    const method = riskId ? 'PATCH' : 'POST';
+    const url = riskId ? `/api/v1/risks/${riskId}` : '/api/v1/risks';
+
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(r => {
+        if (r.ok) {
+            closeRiskModal();
+            htmx.trigger('#risks-table-body', 'load');
+        } else {
+            r.json().then(err => alert(err.detail || 'Feil ved lagring'));
+        }
+    });
+}
+
+function deleteRisk(id) {
+    if (confirm('Er du sikker på at du vil slette denne risikoen?')) {
+        fetch(`/api/v1/risks/${id}`, { method: 'DELETE' })
+            .then(r => {
+                if (r.ok) {
+                    htmx.trigger('#risks-table-body', 'load');
+                }
+            });
+    }
+}
+
+function filterRisks() {
+    const status = document.getElementById('status-filter').value;
+    const project = document.getElementById('project-filter').value;
+    const likelihood = document.getElementById('likelihood-filter').value;
+    const consequence = document.getElementById('consequence-filter').value;
+
+    // Also check URL for target filters (not in dropdowns)
+    const urlParams = new URLSearchParams(window.location.search);
+    const targetLikelihood = urlParams.get('target_likelihood');
+    const targetConsequence = urlParams.get('target_consequence');
+
+    let url = '/api/v1/risks?';
+    if (status) url += `status_filter=${status}&`;
+    if (project) url += `project_id=${project}&`;
+    if (likelihood) url += `likelihood=${likelihood}&`;
+    if (consequence) url += `consequence=${consequence}&`;
+    if (targetLikelihood) url += `target_likelihood=${targetLikelihood}&`;
+    if (targetConsequence) url += `target_consequence=${targetConsequence}&`;
+
+    htmx.ajax('GET', url, '#risks-table-body');
+}
+
+function clearMatrixFilter() {
+    // Clear likelihood and consequence filters
+    document.getElementById('likelihood-filter').value = '';
+    document.getElementById('consequence-filter').value = '';
+
+    // Hide banner
+    document.getElementById('matrix-filter-banner').classList.add('hidden');
+
+    // Remove URL parameters and reload
+    const url = new URL(window.location);
+    url.searchParams.delete('likelihood');
+    url.searchParams.delete('consequence');
+    url.searchParams.delete('target_likelihood');
+    url.searchParams.delete('target_consequence');
+    window.history.replaceState({}, '', url);
+
+    filterRisks();
+}
+
+function clearAllFilters() {
+    document.getElementById('status-filter').value = '';
+    document.getElementById('project-filter').value = '';
+    document.getElementById('likelihood-filter').value = '';
+    document.getElementById('consequence-filter').value = '';
+
+    // Hide banner
+    document.getElementById('matrix-filter-banner').classList.add('hidden');
+
+    // Clear URL and reload
+    window.history.replaceState({}, '', window.location.pathname);
+
+    htmx.ajax('GET', '/api/v1/risks', '#risks-table-body');
+}
+
+// Format risks table response
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.pathInfo.requestPath.startsWith('/api/v1/risks') && evt.detail.successful) {
+        const data = JSON.parse(evt.detail.xhr.responseText);
+        if (Array.isArray(data)) {
+            let html = '';
+            const colorConfig = {
+                'green': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+                'yellow': { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400' },
+                'orange': { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400' },
+                'red': { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400' }
+            };
+
+            data.forEach((risk, idx) => {
+                const config = colorConfig[risk.risk_color] || colorConfig['yellow'];
+                const statusLabels = {
+                    'identifisert': 'Identifisert',
+                    'under_vurdering': 'Under vurdering',
+                    'akseptert': 'Akseptert',
+                    'redusert': 'Redusert',
+                    'overfort': 'Overført',
+                    'lukket': 'Lukket'
+                };
+
+                // Get project name from response or look up in cache
+                let projectName = risk.project_name;
+                if (!projectName && risk.project_id) {
+                    const project = projectsCache.find(p => p.id == risk.project_id);
+                    projectName = project ? project.name : 'Ukjent';
+                }
+                projectName = projectName || 'Ikke tilordnet';
+                html += `
+                    <tr class="group hover:bg-slate-700/20 cursor-pointer transition-colors" onclick="openRiskModal(${risk.id})">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-500">${risk.id}</td>
+                        <td class="px-6 py-4">
+                            <div class="text-sm font-medium text-white group-hover:text-accent-copper transition-colors">${risk.title}</div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-xs font-medium text-purple-400">${projectName}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-xs font-medium text-slate-400 uppercase">${risk.risk_type}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono text-slate-400">${risk.likelihood} x ${risk.consequence}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center justify-center w-10 h-10 rounded-xl ${config.bg} border ${config.border} ${config.text} text-sm font-bold font-mono">
+                                ${risk.risk_score}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm font-mono ${risk.target_risk_score ? 'text-emerald-400' : 'text-slate-600'}">${risk.target_risk_score || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2.5 py-1 rounded-lg bg-slate-700/50 text-xs font-medium text-slate-300">${statusLabels[risk.status] || risk.status}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right" onclick="event.stopPropagation()">
+                            <button onclick="deleteRisk(${risk.id})" class="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            if (html === '') {
+                html = `
+                    <tr>
+                        <td colspan="9" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-slate-700/50 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                    </svg>
+                                </div>
+                                <span class="text-sm text-slate-500">Ingen risikoer funnet</span>
+                                <button onclick="openRiskModal()" class="mt-2 text-sm text-accent-copper hover:text-accent-copper-glow transition-colors">
+                                    Opprett ny risiko &rarr;
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+            evt.detail.target.innerHTML = html;
+        }
+    }
+});
+
+// Calculate risk score and color
+function calculateRiskScore(likelihood, consequence) {
+    const score = likelihood * consequence;
+    let color = 'green';
+    if (score >= 17) color = 'red';
+    else if (score >= 10) color = 'orange';
+    else if (score >= 5) color = 'yellow';
+    return { score, color };
+}
+
+// Initialize immediately - works for both initial load and HTMX navigation
+initRisksPage();
+</script>
+{% endblock %}

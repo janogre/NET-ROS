@@ -1,0 +1,143 @@
+<!-- Risk Matrix Component - Nordic Precision Design -->
+<div class="risk-matrix-container">
+    <div class="flex flex-col items-center">
+        <!-- Matrix with labels -->
+        <div class="flex items-stretch">
+            <!-- Y-axis labels -->
+            <div class="flex flex-col justify-around pr-3 text-xs font-mono text-slate-400" style="height: 280px;">
+                <span class="text-right">5</span>
+                <span class="text-right">4</span>
+                <span class="text-right">3</span>
+                <span class="text-right">2</span>
+                <span class="text-right">1</span>
+            </div>
+
+            <div class="flex flex-col">
+                <!-- Y-axis title -->
+                <div class="text-xs text-slate-500 text-center mb-2 font-mono uppercase tracking-wider">Sannsynlighet</div>
+
+                <!-- Matrix grid -->
+                <div class="grid grid-cols-5 gap-1" id="matrix-grid">
+                    <!-- Row 1: Likelihood 5 -->
+                    <div class="w-12 h-12 bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="5" data-c="1" title="5 x 1 = 5">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-500/80 hover:bg-orange-500 border border-orange-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="5" data-c="2" title="5 x 2 = 10">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-500/80 hover:bg-orange-500 border border-orange-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="5" data-c="3" title="5 x 3 = 15">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-red-500/80 hover:bg-red-500 border border-red-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="5" data-c="4" title="5 x 4 = 20">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-red-500/80 hover:bg-red-500 border border-red-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="5" data-c="5" title="5 x 5 = 25">
+                        <span class="cell-count"></span>
+                    </div>
+
+                    <!-- Row 2: Likelihood 4 -->
+                    <div class="w-12 h-12 bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="4" data-c="1" title="4 x 1 = 4">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="4" data-c="2" title="4 x 2 = 8">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-500/80 hover:bg-orange-500 border border-orange-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="4" data-c="3" title="4 x 3 = 12">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-500/80 hover:bg-orange-500 border border-orange-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="4" data-c="4" title="4 x 4 = 16">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-red-500/80 hover:bg-red-500 border border-red-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="4" data-c="5" title="4 x 5 = 20">
+                        <span class="cell-count"></span>
+                    </div>
+
+                    <!-- Row 3: Likelihood 3 -->
+                    <div class="w-12 h-12 bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="3" data-c="1" title="3 x 1 = 3">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="3" data-c="2" title="3 x 2 = 6">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="3" data-c="3" title="3 x 3 = 9">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-500/80 hover:bg-orange-500 border border-orange-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="3" data-c="4" title="3 x 4 = 12">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-500/80 hover:bg-orange-500 border border-orange-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="3" data-c="5" title="3 x 5 = 15">
+                        <span class="cell-count"></span>
+                    </div>
+
+                    <!-- Row 4: Likelihood 2 -->
+                    <div class="w-12 h-12 bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="2" data-c="1" title="2 x 1 = 2">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="2" data-c="2" title="2 x 2 = 4">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="2" data-c="3" title="2 x 3 = 6">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="2" data-c="4" title="2 x 4 = 8">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-orange-500/80 hover:bg-orange-500 border border-orange-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="2" data-c="5" title="2 x 5 = 10">
+                        <span class="cell-count"></span>
+                    </div>
+
+                    <!-- Row 5: Likelihood 1 -->
+                    <div class="w-12 h-12 bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="1" data-c="1" title="1 x 1 = 1">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="1" data-c="2" title="1 x 2 = 2">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="1" data-c="3" title="1 x 3 = 3">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-emerald-500/80 hover:bg-emerald-500 border border-emerald-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="1" data-c="4" title="1 x 4 = 4">
+                        <span class="cell-count"></span>
+                    </div>
+                    <div class="w-12 h-12 bg-yellow-500/80 hover:bg-yellow-500 border border-yellow-400/30 rounded-lg flex items-center justify-center text-sm font-bold cursor-pointer transition-all matrix-cell text-white/60" data-l="1" data-c="5" title="1 x 5 = 5">
+                        <span class="cell-count"></span>
+                    </div>
+                </div>
+
+                <!-- X-axis labels -->
+                <div class="flex mt-3">
+                    <div class="grid grid-cols-5 gap-1 text-xs font-mono text-slate-400">
+                        <span class="w-12 text-center">1</span>
+                        <span class="w-12 text-center">2</span>
+                        <span class="w-12 text-center">3</span>
+                        <span class="w-12 text-center">4</span>
+                        <span class="w-12 text-center">5</span>
+                    </div>
+                </div>
+
+                <!-- X-axis title -->
+                <div class="text-xs text-slate-500 text-center mt-2 font-mono uppercase tracking-wider">Konsekvens</div>
+            </div>
+        </div>
+
+        <!-- Legend -->
+        <div class="mt-6 flex flex-wrap gap-4 text-xs">
+            <span class="inline-flex items-center gap-2">
+                <span class="w-3 h-3 bg-emerald-500 rounded"></span>
+                <span class="text-slate-400">1-4 Akseptabel</span>
+            </span>
+            <span class="inline-flex items-center gap-2">
+                <span class="w-3 h-3 bg-yellow-500 rounded"></span>
+                <span class="text-slate-400">5-9 Lav</span>
+            </span>
+            <span class="inline-flex items-center gap-2">
+                <span class="w-3 h-3 bg-orange-500 rounded"></span>
+                <span class="text-slate-400">10-16 Middels</span>
+            </span>
+            <span class="inline-flex items-center gap-2">
+                <span class="w-3 h-3 bg-red-500 rounded"></span>
+                <span class="text-slate-400">17-25 Høy</span>
+            </span>
+        </div>
+    </div>
+</div>

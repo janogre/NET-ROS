@@ -1,0 +1,417 @@
+{% extends "base.html" %}
+
+{% block page_title %}Prosjekt{% endblock %}
+
+{% block header %}
+<header class="border-b border-slate-800/50">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div id="project-header" class="animate-fade-in">
+            <!-- Loading state -->
+            <div class="animate-pulse">
+                <div class="h-8 bg-slate-700/50 rounded-lg w-1/3 mb-2"></div>
+                <div class="h-4 bg-slate-700/50 rounded w-1/2"></div>
+            </div>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Risk Matrices -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Current Risk Matrix -->
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-1" style="opacity: 0;">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-white">Eksisterende risikonivå</h2>
+                    <p class="text-sm text-slate-400">Nåværende risikobilde for prosjektet</p>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-slate-700/50 text-xs font-mono text-slate-400">
+                    5x5 Matrise
+                </div>
+            </div>
+            <div id="project-current-matrix" class="flex justify-center">
+                <div class="text-slate-500 text-sm">Laster...</div>
+            </div>
+        </div>
+
+        <!-- Target Risk Matrix -->
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-2" style="opacity: 0;">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-white">Foreslått risikonivå</h2>
+                    <p class="text-sm text-slate-400">Etter tiltak er implementert</p>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono text-emerald-400">
+                    Mål
+                </div>
+            </div>
+            <div id="project-target-matrix" class="flex justify-center">
+                <div class="text-slate-500 text-sm">Laster...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risks List -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 overflow-hidden animate-slide-up stagger-3" style="opacity: 0;">
+        <div class="px-6 py-4 border-b border-slate-700/50 flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-lg font-semibold text-white">Risikoer i prosjektet</h2>
+                    <p class="text-sm text-slate-400">Identifiserte risikoer</p>
+                </div>
+            </div>
+            <a href="/risikoer?project_id={{ project_id }}&action=new"
+               class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-amber-400 hover:shadow-lg hover:shadow-amber-500/25 transition-all">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Legg til risiko
+            </a>
+        </div>
+        <div id="project-risks" class="divide-y divide-slate-700/50">
+            <!-- Loading skeleton -->
+            <div class="p-6 animate-pulse">
+                <div class="h-5 bg-slate-700/50 rounded w-2/3 mb-3"></div>
+                <div class="h-4 bg-slate-700/50 rounded w-1/3"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-4" style="opacity: 0;">
+        <h3 class="text-sm font-medium text-slate-400 mb-4">Hurtighandlinger</h3>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <a href="/risikoer?project_id={{ project_id }}&action=new"
+               class="group flex flex-col items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:border-amber-500/30 hover:bg-slate-700/50 transition-all">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Ny risiko</span>
+            </a>
+
+            <a href="/tiltak?project_id={{ project_id }}"
+               class="group flex flex-col items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:border-emerald-500/30 hover:bg-slate-700/50 transition-all">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Se tiltak</span>
+            </a>
+
+            <a href="/prosjekter"
+               class="group flex flex-col items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:border-purple-500/30 hover:bg-slate-700/50 transition-all">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Alle prosjekter</span>
+            </a>
+
+            <a href="/rapporter?project_id={{ project_id }}"
+               class="group flex flex-col items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:border-cyan-500/30 hover:bg-slate-700/50 transition-all">
+                <div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-cyan-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Rapport</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+const PROJECT_ID = {{ project_id }};
+
+// Initialize page
+function initProjectDetail() {
+    loadProjectHeader();
+    loadRiskMatrix('project-current-matrix', `/api/v1/risks/matrix?project_id=${PROJECT_ID}`);
+    loadRiskMatrix('project-target-matrix', `/api/v1/risks/matrix/target?project_id=${PROJECT_ID}`);
+    loadProjectRisks();
+}
+
+async function loadProjectHeader() {
+    try {
+        const response = await fetch(`/api/v1/projects/${PROJECT_ID}`);
+        const project = await response.json();
+
+        const statusConfig = {
+            'planlagt': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400', label: 'Planlagt' },
+            'pågår': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', label: 'Pågår' },
+            'fullført': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', label: 'Fullført' }
+        };
+
+        const typeConfig = {
+            'periodisk_ros': { label: 'Periodisk ROS', color: 'purple' },
+            'hendelsesbasert': { label: 'Hendelsesbasert', color: 'amber' },
+            'dpia': { label: 'DPIA', color: 'cyan' },
+            'endring': { label: 'Endring', color: 'rose' }
+        };
+
+        const status = statusConfig[project.status] || statusConfig['planlagt'];
+        const type = typeConfig[project.project_type] || typeConfig['periodisk_ros'];
+
+        document.getElementById('project-header').innerHTML = `
+            <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+                <div>
+                    <div class="flex items-center gap-3 mb-2">
+                        <h1 class="text-3xl font-bold tracking-tight text-white">${project.name}</h1>
+                        <span class="px-3 py-1 rounded-full ${status.bg} border ${status.border} text-sm font-medium ${status.text}">
+                            ${status.label}
+                        </span>
+                    </div>
+                    <p class="text-slate-400">${project.description || 'Ingen beskrivelse'}</p>
+                    <div class="flex flex-wrap items-center gap-4 mt-4 text-sm">
+                        <span class="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-${type.color}-500/10 border border-${type.color}-500/20 text-${type.color}-400">
+                            ${type.label}
+                        </span>
+                        <span class="text-slate-500">
+                            <span class="font-semibold text-white">${project.risk_count}</span> risikoer
+                        </span>
+                        ${project.scheduled_date ? `
+                            <span class="text-slate-500">
+                                Planlagt: <span class="text-slate-300">${new Date(project.scheduled_date).toLocaleDateString('nb-NO')}</span>
+                            </span>
+                        ` : ''}
+                    </div>
+                </div>
+                <button onclick="editProject(${project.id})"
+                        class="inline-flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium text-slate-300 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-700 hover:text-white transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
+                    </svg>
+                    Rediger
+                </button>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Failed to load project:', error);
+        document.getElementById('project-header').innerHTML = `
+            <div class="text-red-400">Feil ved lasting av prosjekt</div>
+        `;
+    }
+}
+
+async function loadRiskMatrix(containerId, url) {
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        renderMatrix(containerId, data, PROJECT_ID);
+    } catch (error) {
+        console.error('Failed to load matrix:', error);
+        document.getElementById(containerId).innerHTML = '<p class="text-red-400">Feil ved lasting av matrise</p>';
+    }
+}
+
+function renderMatrix(containerId, data, projectId = null) {
+    const container = document.getElementById(containerId);
+    const isTargetMatrix = containerId.includes('target');
+
+    const getColorClass = (score) => {
+        if (score <= 4) return 'bg-emerald-500/80 hover:bg-emerald-500';
+        if (score <= 9) return 'bg-yellow-500/80 hover:bg-yellow-500';
+        if (score <= 16) return 'bg-orange-500/80 hover:bg-orange-500';
+        return 'bg-red-500/80 hover:bg-red-500';
+    };
+
+    const getBorderClass = (score) => {
+        if (score <= 4) return 'border-emerald-400/30';
+        if (score <= 9) return 'border-yellow-400/30';
+        if (score <= 16) return 'border-orange-400/30';
+        return 'border-red-400/30';
+    };
+
+    let html = `
+        <div class="flex flex-col items-center">
+            <div class="flex items-stretch">
+                <div class="flex flex-col justify-around pr-3 text-xs font-mono text-slate-400" style="height: 280px;">
+                    <span class="text-right">5</span>
+                    <span class="text-right">4</span>
+                    <span class="text-right">3</span>
+                    <span class="text-right">2</span>
+                    <span class="text-right">1</span>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-xs text-slate-500 text-center mb-2 font-mono uppercase tracking-wider">Sannsynlighet</div>
+                    <div class="grid grid-cols-5 gap-1">
+    `;
+
+    data.cells.forEach(row => {
+        row.forEach(cell => {
+            const colorClass = getColorClass(cell.score);
+            const borderClass = getBorderClass(cell.score);
+            const count = cell.risk_count > 0 ? cell.risk_count : '';
+            const hasRisks = cell.risk_count > 0;
+
+            // Build click URL for filtering
+            let clickUrl = `/risikoer?likelihood=${cell.likelihood}&consequence=${cell.consequence}`;
+            if (isTargetMatrix) {
+                clickUrl = `/risikoer?target_likelihood=${cell.likelihood}&target_consequence=${cell.consequence}`;
+            }
+            if (projectId) {
+                clickUrl += `&project_id=${projectId}`;
+            }
+
+            const clickHandler = hasRisks ? `onclick="window.location.href='${clickUrl}'"` : '';
+            const cursorClass = hasRisks ? 'cursor-pointer' : 'cursor-default';
+
+            html += `
+                <div class="group relative w-12 h-12 ${colorClass} border ${borderClass} rounded-lg flex items-center justify-center text-sm font-bold transition-all matrix-cell ${hasRisks ? 'text-white shadow-lg ' + cursorClass : 'text-white/60'}"
+                     ${clickHandler}>
+                    ${count}
+                    ${hasRisks && cell.risks && cell.risks.length > 0 ? `
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                        <div class="bg-slate-900 border border-slate-600 rounded-xl shadow-2xl p-3 min-w-[200px] max-w-[280px]">
+                            <p class="text-xs font-mono text-slate-400 mb-2">${cell.likelihood} × ${cell.consequence} = <span class="text-white font-bold">${cell.score}</span></p>
+                            <div class="space-y-1.5 max-h-[150px] overflow-y-auto">
+                                ${cell.risks.map(r => `
+                                    <div class="text-xs text-slate-300 truncate">• ${r.title}</div>
+                                `).join('')}
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-700">Klikk for å se alle</p>
+                        </div>
+                        <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-900 border-r border-b border-slate-600 transform rotate-45"></div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+    });
+
+    html += `
+                    </div>
+                    <div class="flex mt-3">
+                        <div class="grid grid-cols-5 gap-1 text-xs font-mono text-slate-400">
+                            <span class="w-12 text-center">1</span>
+                            <span class="w-12 text-center">2</span>
+                            <span class="w-12 text-center">3</span>
+                            <span class="w-12 text-center">4</span>
+                            <span class="w-12 text-center">5</span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-500 text-center mt-2 font-mono uppercase tracking-wider">Konsekvens</div>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-4 text-xs">
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 bg-emerald-500 rounded"></span>
+                    <span class="text-slate-400">1-4 Akseptabel</span>
+                </span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 bg-yellow-500 rounded"></span>
+                    <span class="text-slate-400">5-9 Lav</span>
+                </span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 bg-orange-500 rounded"></span>
+                    <span class="text-slate-400">10-16 Middels</span>
+                </span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 bg-red-500 rounded"></span>
+                    <span class="text-slate-400">17-25 Høy</span>
+                </span>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+async function loadProjectRisks() {
+    try {
+        const response = await fetch(`/api/v1/risks?project_id=${PROJECT_ID}`);
+        const risks = await response.json();
+
+        const container = document.getElementById('project-risks');
+
+        if (!Array.isArray(risks) || risks.length === 0) {
+            container.innerHTML = `
+                <div class="p-8 text-center">
+                    <div class="w-16 h-16 rounded-2xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-8 h-8 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <p class="text-slate-400">Ingen risikoer i dette prosjektet ennå.</p>
+                    <a href="/risikoer?project_id=${PROJECT_ID}&action=new"
+                       class="inline-flex items-center gap-2 mt-4 px-4 py-2 rounded-xl text-sm font-medium text-white bg-gradient-to-r from-amber-500 to-amber-400 hover:shadow-lg hover:shadow-amber-500/25 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                        Legg til første risiko
+                    </a>
+                </div>
+            `;
+            return;
+        }
+
+        const colorConfig = {
+            'green': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+            'yellow': { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400' },
+            'orange': { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400' },
+            'red': { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400' }
+        };
+
+        const statusLabels = {
+            'identifisert': 'Identifisert',
+            'under_vurdering': 'Under vurdering',
+            'akseptert': 'Akseptert',
+            'redusert': 'Redusert',
+            'overført': 'Overført',
+            'lukket': 'Lukket'
+        };
+
+        let html = '';
+        risks.forEach(risk => {
+            const color = colorConfig[risk.risk_color] || colorConfig['yellow'];
+            html += `
+                <a href="/risikoer/${risk.id}" class="flex items-center justify-between px-6 py-4 hover:bg-slate-700/30 transition-colors">
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium text-white truncate">${risk.title}</p>
+                        <div class="flex items-center gap-3 mt-1 text-sm">
+                            <span class="text-slate-500">${risk.risk_type}</span>
+                            <span class="text-slate-600">•</span>
+                            <span class="text-slate-400">${statusLabels[risk.status] || risk.status}</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-4 ml-4">
+                        <span class="px-3 py-1.5 rounded-lg ${color.bg} border ${color.border} text-sm font-bold ${color.text}">
+                            ${risk.risk_score}
+                        </span>
+                        <svg class="w-5 h-5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                        </svg>
+                    </div>
+                </a>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Failed to load risks:', error);
+        document.getElementById('project-risks').innerHTML = `
+            <div class="p-6 text-center text-red-400">Feil ved lasting av risikoer</div>
+        `;
+    }
+}
+
+function editProject(projectId) {
+    // Redirect to projects list with edit action
+    window.location.href = `/prosjekter?edit=${projectId}`;
+}
+
+// Initialize immediately - works for both initial load and HTMX navigation
+initProjectDetail();
+</script>
+{% endblock %}

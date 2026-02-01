@@ -1,0 +1,274 @@
+{% extends "base.html" %}
+
+{% block page_title %}Rapporter{% endblock %}
+
+{% block header %}
+<header class="border-b border-slate-800/50">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="animate-fade-in">
+            <h1 class="text-3xl font-bold tracking-tight text-white">Rapporter</h1>
+            <p class="mt-1 text-sm text-slate-400">Generer og eksporter ROS-dokumentasjon</p>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Report Types Grid -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Risk Register Report -->
+        <div class="group rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 card-hover animate-slide-up stagger-1" style="opacity: 0;">
+            <div class="flex items-start justify-between mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-500/20 to-amber-600/10 border border-amber-500/20 flex items-center justify-center">
+                    <svg class="w-7 h-7 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <span class="px-2 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-xs font-mono text-amber-400 uppercase">PDF</span>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Risikoregister</h3>
+            <p class="text-sm text-slate-400 mb-6">Komplett oversikt over alle identifiserte risikoer med vurderinger, tiltak og status.</p>
+            <div class="flex gap-2">
+                <a href="/api/v1/reports/risk-register" target="_blank"
+                   class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-700/50 border border-slate-600/30 text-sm font-medium text-slate-200 hover:bg-slate-700 hover:text-white transition-all">
+                    HTML
+                </a>
+                <a href="/api/v1/reports/risk-register/pdf" target="_blank"
+                   class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-500/30 text-sm font-medium text-amber-400 hover:bg-amber-500/20 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                    </svg>
+                    PDF
+                </a>
+            </div>
+        </div>
+
+        <!-- Nkom Summary Report -->
+        <div class="group rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 card-hover animate-slide-up stagger-2" style="opacity: 0;">
+            <div class="flex items-start justify-between mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-blue-500/20 to-blue-600/10 border border-blue-500/20 flex items-center justify-center">
+                    <svg class="w-7 h-7 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <span class="px-2 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-xs font-mono text-blue-400 uppercase">PDF</span>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">Nkom-oppsummering</h3>
+            <p class="text-sm text-slate-400 mb-6">Tilsynsrapport tilpasset Nkoms krav iht. ekomforskriften paragraf 2-5.</p>
+            <div class="flex gap-2">
+                <a href="/api/v1/reports/nkom-summary" target="_blank"
+                   class="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-700/50 border border-slate-600/30 text-sm font-medium text-slate-200 hover:bg-slate-700 hover:text-white transition-all">
+                    HTML
+                </a>
+                <form action="/api/v1/reports/nkom-summary/pdf" method="POST" target="_blank" class="flex-1">
+                    <button type="submit"
+                            class="w-full flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-500/30 text-sm font-medium text-blue-400 hover:bg-blue-500/20 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                        </svg>
+                        PDF
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- NSM Coverage Report -->
+        <div class="group rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 card-hover animate-slide-up stagger-3" style="opacity: 0;">
+            <div class="flex items-start justify-between mb-4">
+                <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500/20 to-emerald-600/10 border border-emerald-500/20 flex items-center justify-center">
+                    <svg class="w-7 h-7 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                    </svg>
+                </div>
+                <span class="px-2 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono text-emerald-400 uppercase">Dekning</span>
+            </div>
+            <h3 class="text-lg font-semibold text-white mb-2">NSM Dekning</h3>
+            <p class="text-sm text-slate-400 mb-4">Oversikt over dekning mot NSMs grunnprinsipper for IKT-sikkerhet.</p>
+            <div id="nsm-coverage" class="mb-4">
+                <div class="animate-pulse h-16 bg-slate-700/50 rounded-xl"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Matrix Report -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-4" style="opacity: 0;">
+        <div class="flex items-center justify-between mb-6">
+            <div>
+                <h2 class="text-lg font-semibold text-white">Risikomatrise-oversikt</h2>
+                <p class="text-sm text-slate-400">Sammenligning av nåværende og mål-risikonivå</p>
+            </div>
+            <div class="px-3 py-1 rounded-full bg-purple-500/10 border border-purple-500/20 text-xs font-mono text-purple-400">
+                5x5 Matrise
+            </div>
+        </div>
+        <div id="matrix-report">
+            <div class="animate-pulse grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="h-32 bg-slate-700/50 rounded-xl"></div>
+                <div class="h-32 bg-slate-700/50 rounded-xl"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compliance Info -->
+    <div class="rounded-2xl bg-gradient-to-br from-slate-800/50 to-slate-800/30 border border-slate-700/50 p-6 animate-slide-up stagger-5" style="opacity: 0;">
+        <div class="flex items-start gap-4">
+            <div class="w-12 h-12 rounded-xl bg-accent-copper/10 border border-accent-copper/20 flex items-center justify-center flex-shrink-0">
+                <svg class="w-6 h-6 text-accent-copper" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+            </div>
+            <div>
+                <h3 class="text-lg font-semibold text-white mb-2">Regulatorisk samsvar</h3>
+                <p class="text-sm text-slate-400 mb-4">
+                    Rapportene er tilpasset kravene i ekomforskriften paragraf 2-5 og NSMs grunnprinsipper for IKT-sikkerhet.
+                    De kan brukes som dokumentasjon ved Nkom-tilsyn og internrevisjoner.
+                </p>
+                <div class="flex flex-wrap gap-2">
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-700/50 text-xs font-medium text-slate-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Ekomforskriften
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-700/50 text-xs font-medium text-slate-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        NSM Grunnprinsipper
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-3 py-1 rounded-lg bg-slate-700/50 text-xs font-medium text-slate-300">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                        Nkom-tilsyn
+                    </span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Load data on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadNSMCoverage();
+    loadMatrixReport();
+});
+
+async function loadNSMCoverage() {
+    try {
+        const response = await fetch('/api/v1/reports/nsm-coverage');
+        const data = await response.json();
+        const pct = data.coverage_percent;
+
+        const getColorConfig = (percent) => {
+            if (percent >= 80) return { bg: 'bg-emerald-500', text: 'text-emerald-400', border: 'border-emerald-500/30' };
+            if (percent >= 50) return { bg: 'bg-yellow-500', text: 'text-yellow-400', border: 'border-yellow-500/30' };
+            return { bg: 'bg-red-500', text: 'text-red-400', border: 'border-red-500/30' };
+        };
+
+        const config = getColorConfig(pct);
+
+        document.getElementById('nsm-coverage').innerHTML = `
+            <div class="p-4 rounded-xl bg-slate-900/50 border ${config.border}">
+                <div class="flex justify-between items-center text-sm mb-3">
+                    <span class="text-slate-400">Dekning av prinsipper</span>
+                    <span class="font-mono ${config.text}">${data.mapped_principles} / ${data.total_principles}</span>
+                </div>
+                <div class="w-full bg-slate-700/50 rounded-full h-2 mb-3">
+                    <div class="${config.bg} h-2 rounded-full transition-all duration-500" style="width: ${pct}%"></div>
+                </div>
+                <p class="text-2xl font-bold ${config.text} font-mono">${pct}%</p>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Failed to load NSM coverage:', error);
+        document.getElementById('nsm-coverage').innerHTML = `
+            <div class="p-4 rounded-xl bg-slate-900/50 border border-slate-700/30 text-center text-slate-500 text-sm">
+                Kunne ikke laste NSM-dekning
+            </div>
+        `;
+    }
+}
+
+async function loadMatrixReport() {
+    try {
+        const response = await fetch('/api/v1/reports/risk-matrix');
+        const data = await response.json();
+
+        const getRiskDistribution = (matrix) => {
+            let low = 0, medium = 0, high = 0, critical = 0;
+            if (matrix.cells) {
+                matrix.cells.forEach(row => {
+                    row.forEach(cell => {
+                        if (cell.score <= 4) low += cell.risk_count;
+                        else if (cell.score <= 9) medium += cell.risk_count;
+                        else if (cell.score <= 16) high += cell.risk_count;
+                        else critical += cell.risk_count;
+                    });
+                });
+            }
+            return { low, medium, high, critical };
+        };
+
+        const currentDist = getRiskDistribution(data.current_matrix);
+        const targetDist = getRiskDistribution(data.target_matrix);
+
+        document.getElementById('matrix-report').innerHTML = `
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="p-5 rounded-xl bg-slate-900/50 border border-slate-700/30">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-medium text-white">Nåværende risikonivå</h4>
+                        <span class="text-2xl font-bold text-white font-mono">${data.current_matrix.total_risks}</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-emerald-500"></span><span class="text-slate-400">Akseptabel (1-4)</span></span>
+                            <span class="font-mono text-emerald-400">${currentDist.low}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-yellow-500"></span><span class="text-slate-400">Lav (5-9)</span></span>
+                            <span class="font-mono text-yellow-400">${currentDist.medium}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-orange-500"></span><span class="text-slate-400">Middels (10-16)</span></span>
+                            <span class="font-mono text-orange-400">${currentDist.high}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-red-500"></span><span class="text-slate-400">Høy (17-25)</span></span>
+                            <span class="font-mono text-red-400">${currentDist.critical}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="p-5 rounded-xl bg-emerald-500/5 border border-emerald-500/20">
+                    <div class="flex items-center justify-between mb-4">
+                        <h4 class="font-medium text-emerald-400">Etter tiltak (mal)</h4>
+                        <span class="text-2xl font-bold text-emerald-400 font-mono">${data.target_matrix.total_risks}</span>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-emerald-500"></span><span class="text-slate-400">Akseptabel (1-4)</span></span>
+                            <span class="font-mono text-emerald-400">${targetDist.low}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-yellow-500"></span><span class="text-slate-400">Lav (5-9)</span></span>
+                            <span class="font-mono text-yellow-400">${targetDist.medium}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-orange-500"></span><span class="text-slate-400">Middels (10-16)</span></span>
+                            <span class="font-mono text-orange-400">${targetDist.high}</span>
+                        </div>
+                        <div class="flex items-center justify-between text-sm">
+                            <span class="flex items-center gap-2"><span class="w-3 h-3 rounded bg-red-500"></span><span class="text-slate-400">Høy (17-25)</span></span>
+                            <span class="font-mono text-red-400">${targetDist.critical}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        `;
+    } catch (error) {
+        console.error('Failed to load matrix report:', error);
+        document.getElementById('matrix-report').innerHTML = `
+            <div class="p-6 rounded-xl bg-slate-900/50 border border-slate-700/30 text-center text-slate-500 text-sm">
+                Kunne ikke laste matriserapport
+            </div>
+        `;
+    }
+}
+</script>
+{% endblock %}

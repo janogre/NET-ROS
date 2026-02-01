@@ -1,0 +1,511 @@
+{% extends "base.html" %}
+
+{% block page_title %}Dashboard{% endblock %}
+
+{% block header %}
+<header class="border-b border-slate-800/50">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="animate-fade-in">
+                <h1 class="text-3xl font-bold tracking-tight text-white">Dashboard</h1>
+                <p class="mt-1 text-sm text-slate-400">Oversikt over risikoer, tiltak og status</p>
+            </div>
+            <div class="flex items-center gap-2 text-xs font-mono text-slate-500 animate-fade-in" style="animation-delay: 0.2s; opacity: 0;">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+                <span>Sist oppdatert: <span id="last-updated">--:--</span></span>
+            </div>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Summary Cards -->
+    <div id="summary-cards" class="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <!-- Total Assets Card -->
+        <div class="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 card-hover animate-slide-up stagger-1" style="opacity: 0;">
+            <div class="absolute inset-0 bg-gradient-to-br from-blue-500/5 to-transparent"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between">
+                    <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-mono text-slate-500 uppercase tracking-wider">Assets</span>
+                </div>
+                <p class="mt-4 text-4xl font-bold text-white font-mono" id="total-assets">
+                    <span class="inline-block w-12 h-8 bg-slate-700/50 rounded animate-pulse"></span>
+                </p>
+                <p class="mt-1 text-sm text-slate-400">Totalt registrert</p>
+            </div>
+        </div>
+
+        <!-- Total Risks Card -->
+        <div class="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 card-hover animate-slide-up stagger-2" style="opacity: 0;">
+            <div class="absolute inset-0 bg-gradient-to-br from-amber-500/5 to-transparent"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between">
+                    <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-mono text-slate-500 uppercase tracking-wider">Risikoer</span>
+                </div>
+                <p class="mt-4 text-4xl font-bold text-white font-mono" id="total-risks">
+                    <span class="inline-block w-12 h-8 bg-slate-700/50 rounded animate-pulse"></span>
+                </p>
+                <p class="mt-1 text-sm text-slate-400">Identifiserte</p>
+            </div>
+        </div>
+
+        <!-- Open Actions Card -->
+        <div class="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 card-hover animate-slide-up stagger-3" style="opacity: 0;">
+            <div class="absolute inset-0 bg-gradient-to-br from-emerald-500/5 to-transparent"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between">
+                    <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-mono text-slate-500 uppercase tracking-wider">Tiltak</span>
+                </div>
+                <p class="mt-4 text-4xl font-bold text-white font-mono" id="open-actions">
+                    <span class="inline-block w-12 h-8 bg-slate-700/50 rounded animate-pulse"></span>
+                </p>
+                <p class="mt-1 text-sm text-slate-400">Åpne tiltak</p>
+            </div>
+        </div>
+
+        <!-- Overdue Actions Card -->
+        <div class="group relative overflow-hidden rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 card-hover animate-slide-up stagger-4" style="opacity: 0;">
+            <div class="absolute inset-0 bg-gradient-to-br from-red-500/5 to-transparent"></div>
+            <div class="relative">
+                <div class="flex items-center justify-between">
+                    <div class="w-12 h-12 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                        <svg class="w-6 h-6 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <span class="text-xs font-mono text-slate-500 uppercase tracking-wider">Forfalt</span>
+                </div>
+                <p class="mt-4 text-4xl font-bold font-mono" id="overdue-actions">
+                    <span class="inline-block w-12 h-8 bg-slate-700/50 rounded animate-pulse"></span>
+                </p>
+                <p class="mt-1 text-sm text-slate-400">Krever handling</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Risk Matrices -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Current Risk Matrix -->
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-3" style="opacity: 0;">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-white">Eksisterende risikonivå</h2>
+                    <p class="text-sm text-slate-400">Nåværende risikobilde</p>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-slate-700/50 text-xs font-mono text-slate-400">
+                    5x5 Matrise
+                </div>
+            </div>
+            <div id="current-matrix" class="flex justify-center">
+                <div class="text-slate-500 text-sm">Laster...</div>
+            </div>
+        </div>
+
+        <!-- Target Risk Matrix -->
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-4" style="opacity: 0;">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h2 class="text-lg font-semibold text-white">Foreslått risikonivå</h2>
+                    <p class="text-sm text-slate-400">Etter tiltak er implementert</p>
+                </div>
+                <div class="px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-xs font-mono text-emerald-400">
+                    Mål
+                </div>
+            </div>
+            <div id="target-matrix" class="flex justify-center">
+                <div class="text-slate-500 text-sm">Laster...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Alerts and Critical Risks -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Alerts -->
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-4" style="opacity: 0;">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-white">Varsler</h2>
+                        <p class="text-sm text-slate-400">Viktige hendelser</p>
+                    </div>
+                </div>
+            </div>
+            <div id="alerts" class="space-y-3">
+                <div class="text-slate-500 text-sm">Laster...</div>
+            </div>
+        </div>
+
+        <!-- Critical Risks -->
+        <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-5" style="opacity: 0;">
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-red-500/10 border border-red-500/20 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-white">Høyeste risikoer</h2>
+                        <p class="text-sm text-slate-400">Prioriterte omrader</p>
+                    </div>
+                </div>
+                <a href="/risikoer" class="text-sm text-accent-copper hover:text-accent-copper-glow transition-colors">
+                    Se alle &rarr;
+                </a>
+            </div>
+            <div id="critical-risks" class="space-y-3">
+                <div class="text-slate-500 text-sm">Laster...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-6 animate-slide-up stagger-5" style="opacity: 0;">
+        <h2 class="text-lg font-semibold text-white mb-6">Hurtighandlinger</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+            <a href="/risikoer"
+               class="group flex flex-col items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:border-amber-500/30 hover:bg-slate-700/50 transition-all">
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Ny risiko</span>
+            </a>
+
+            <a href="/assets"
+               class="group flex flex-col items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:border-blue-500/30 hover:bg-slate-700/50 transition-all">
+                <div class="w-12 h-12 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Ny asset</span>
+            </a>
+
+            <a href="/tiltak"
+               class="group flex flex-col items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:border-emerald-500/30 hover:bg-slate-700/50 transition-all">
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 4v16m8-8H4"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Nytt tiltak</span>
+            </a>
+
+            <a href="/rapporter"
+               class="group flex flex-col items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30 hover:border-purple-500/30 hover:bg-slate-700/50 transition-all">
+                <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center group-hover:scale-110 transition-transform">
+                    <svg class="w-6 h-6 text-purple-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <span class="text-sm font-medium text-slate-300 group-hover:text-white transition-colors">Rapport</span>
+            </a>
+        </div>
+    </div>
+</div>
+
+<script>
+// Initialize dashboard - called at the end of script
+function initDashboard() {
+    loadDashboardSummary();
+    loadRiskMatrix('current-matrix', '/api/v1/risks/matrix');
+    loadRiskMatrix('target-matrix', '/api/v1/risks/matrix/target');
+    loadAlerts();
+    loadCriticalRisks();
+    updateTimestamp();
+}
+
+function updateTimestamp() {
+    const now = new Date();
+    document.getElementById('last-updated').textContent = now.toLocaleTimeString('nb-NO', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function loadDashboardSummary() {
+    try {
+        const response = await fetch('/api/v1/dashboard/summary');
+        const data = await response.json();
+
+        document.getElementById('total-assets').textContent = data.total_assets || 0;
+        document.getElementById('total-risks').textContent = data.total_risks || 0;
+
+        // Calculate open actions with null safety
+        const totalActions = data.total_actions || 0;
+        const completedActions = data.action_progress?.fullført || 0;
+        document.getElementById('open-actions').textContent = totalActions - completedActions;
+
+        const overdueEl = document.getElementById('overdue-actions');
+        const overdueCount = data.overdue_actions || 0;
+        overdueEl.textContent = overdueCount;
+        if (overdueCount > 0) {
+            overdueEl.classList.add('text-red-400');
+        } else {
+            overdueEl.classList.add('text-white');
+        }
+    } catch (error) {
+        console.error('Failed to load summary:', error);
+    }
+}
+
+async function loadRiskMatrix(containerId, url) {
+    try {
+        const response = await fetch(url);
+        const data = await response.json();
+        renderMatrix(containerId, data);
+    } catch (error) {
+        console.error('Failed to load matrix:', error);
+        document.getElementById(containerId).innerHTML = '<p class="text-red-400">Feil ved lasting av matrise</p>';
+    }
+}
+
+function renderMatrix(containerId, data, projectId = null) {
+    const container = document.getElementById(containerId);
+    const isTargetMatrix = containerId.includes('target');
+
+    const getColorClass = (score) => {
+        if (score <= 4) return 'bg-emerald-500/80 hover:bg-emerald-500';
+        if (score <= 9) return 'bg-yellow-500/80 hover:bg-yellow-500';
+        if (score <= 16) return 'bg-orange-500/80 hover:bg-orange-500';
+        return 'bg-red-500/80 hover:bg-red-500';
+    };
+
+    const getBorderClass = (score) => {
+        if (score <= 4) return 'border-emerald-400/30';
+        if (score <= 9) return 'border-yellow-400/30';
+        if (score <= 16) return 'border-orange-400/30';
+        return 'border-red-400/30';
+    };
+
+    let html = `
+        <div class="flex flex-col items-center">
+            <div class="flex items-stretch">
+                <div class="flex flex-col justify-around pr-3 text-xs font-mono text-slate-400" style="height: 280px;">
+                    <span class="text-right">5</span>
+                    <span class="text-right">4</span>
+                    <span class="text-right">3</span>
+                    <span class="text-right">2</span>
+                    <span class="text-right">1</span>
+                </div>
+                <div class="flex flex-col">
+                    <div class="text-xs text-slate-500 text-center mb-2 font-mono uppercase tracking-wider">Sannsynlighet</div>
+                    <div class="grid grid-cols-5 gap-1">
+    `;
+
+    data.cells.forEach(row => {
+        row.forEach(cell => {
+            const colorClass = getColorClass(cell.score);
+            const borderClass = getBorderClass(cell.score);
+            const count = cell.risk_count > 0 ? cell.risk_count : '';
+            const hasRisks = cell.risk_count > 0;
+
+            // Build tooltip content with risk titles
+            let tooltipContent = `${cell.likelihood} × ${cell.consequence} = ${cell.score}`;
+            if (cell.risks && cell.risks.length > 0) {
+                const riskTitles = cell.risks.map(r => `• ${r.title}`).join('\\n');
+                tooltipContent += `\\n\\n${riskTitles}`;
+            }
+
+            // Build click URL for filtering
+            let clickUrl = `/risikoer?likelihood=${cell.likelihood}&consequence=${cell.consequence}`;
+            if (isTargetMatrix) {
+                clickUrl = `/risikoer?target_likelihood=${cell.likelihood}&target_consequence=${cell.consequence}`;
+            }
+            if (projectId) {
+                clickUrl += `&project_id=${projectId}`;
+            }
+
+            const clickHandler = hasRisks ? `onclick="window.location.href='${clickUrl}'"` : '';
+            const cursorClass = hasRisks ? 'cursor-pointer' : 'cursor-default';
+
+            html += `
+                <div class="group relative w-12 h-12 ${colorClass} border ${borderClass} rounded-lg flex items-center justify-center text-sm font-bold transition-all matrix-cell ${hasRisks ? 'text-white shadow-lg ' + cursorClass : 'text-white/60'}"
+                     ${clickHandler}>
+                    ${count}
+                    ${hasRisks && cell.risks && cell.risks.length > 0 ? `
+                    <div class="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 z-50 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none">
+                        <div class="bg-slate-900 border border-slate-600 rounded-xl shadow-2xl p-3 min-w-[200px] max-w-[280px]">
+                            <p class="text-xs font-mono text-slate-400 mb-2">${cell.likelihood} × ${cell.consequence} = <span class="text-white font-bold">${cell.score}</span></p>
+                            <div class="space-y-2 max-h-[180px] overflow-y-auto">
+                                ${cell.risks.map(r => `
+                                    <div class="text-xs">
+                                        <div class="text-slate-300 truncate">• ${r.title}</div>
+                                        ${r.project_name ? `<div class="text-slate-500 text-[10px] ml-3 truncate">${r.project_name}</div>` : ''}
+                                    </div>
+                                `).join('')}
+                            </div>
+                            <p class="text-xs text-slate-500 mt-2 pt-2 border-t border-slate-700">Klikk for å se alle</p>
+                        </div>
+                        <div class="absolute top-full left-1/2 -translate-x-1/2 -mt-1 w-2 h-2 bg-slate-900 border-r border-b border-slate-600 transform rotate-45"></div>
+                    </div>
+                    ` : ''}
+                </div>
+            `;
+        });
+    });
+
+    html += `
+                    </div>
+                    <div class="flex mt-3">
+                        <div class="grid grid-cols-5 gap-1 text-xs font-mono text-slate-400">
+                            <span class="w-12 text-center">1</span>
+                            <span class="w-12 text-center">2</span>
+                            <span class="w-12 text-center">3</span>
+                            <span class="w-12 text-center">4</span>
+                            <span class="w-12 text-center">5</span>
+                        </div>
+                    </div>
+                    <div class="text-xs text-slate-500 text-center mt-2 font-mono uppercase tracking-wider">Konsekvens</div>
+                </div>
+            </div>
+            <div class="mt-6 flex flex-wrap gap-4 text-xs">
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 bg-emerald-500 rounded"></span>
+                    <span class="text-slate-400">1-4 Akseptabel</span>
+                </span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 bg-yellow-500 rounded"></span>
+                    <span class="text-slate-400">5-9 Lav</span>
+                </span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 bg-orange-500 rounded"></span>
+                    <span class="text-slate-400">10-16 Middels</span>
+                </span>
+                <span class="inline-flex items-center gap-2">
+                    <span class="w-3 h-3 bg-red-500 rounded"></span>
+                    <span class="text-slate-400">17-25 Høy</span>
+                </span>
+            </div>
+        </div>
+    `;
+
+    container.innerHTML = html;
+}
+
+async function loadAlerts() {
+    try {
+        const response = await fetch('/api/v1/dashboard/alerts');
+        const alerts = await response.json();
+
+        const container = document.getElementById('alerts');
+
+        if (alerts.length === 0) {
+            container.innerHTML = `
+                <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm text-slate-400">Ingen aktive varsler</span>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        alerts.forEach(alert => {
+            const config = {
+                'danger': { bg: 'bg-red-500/10', border: 'border-red-500/20', icon: 'text-red-400', text: 'text-red-300' },
+                'warning': { bg: 'bg-amber-500/10', border: 'border-amber-500/20', icon: 'text-amber-400', text: 'text-amber-300' },
+                'info': { bg: 'bg-blue-500/10', border: 'border-blue-500/20', icon: 'text-blue-400', text: 'text-blue-300' }
+            }[alert.type] || { bg: 'bg-slate-700/30', border: 'border-slate-600/30', icon: 'text-slate-400', text: 'text-slate-300' };
+
+            html += `
+                <div class="flex items-start gap-3 p-4 rounded-xl ${config.bg} border ${config.border}">
+                    <div class="w-8 h-8 rounded-lg ${config.bg} flex items-center justify-center flex-shrink-0 mt-0.5">
+                        <svg class="w-4 h-4 ${config.icon}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                    <p class="text-sm ${config.text}">${alert.message}</p>
+                </div>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Failed to load alerts:', error);
+    }
+}
+
+async function loadCriticalRisks() {
+    try {
+        const response = await fetch('/api/v1/risks?limit=5');
+        const risks = await response.json();
+
+        const container = document.getElementById('critical-risks');
+
+        if (risks.length === 0) {
+            container.innerHTML = `
+                <div class="flex items-center gap-3 p-4 rounded-xl bg-slate-700/30 border border-slate-600/30">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                        <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                    <span class="text-sm text-slate-400">Ingen risikoer registrert</span>
+                </div>
+            `;
+            return;
+        }
+
+        let html = '';
+        risks.forEach(risk => {
+            const colorConfig = {
+                'green': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/20', badge: 'bg-emerald-500', text: 'text-emerald-400' },
+                'yellow': { bg: 'bg-yellow-500/10', border: 'border-yellow-500/20', badge: 'bg-yellow-500', text: 'text-yellow-400' },
+                'orange': { bg: 'bg-orange-500/10', border: 'border-orange-500/20', badge: 'bg-orange-500', text: 'text-orange-400' },
+                'red': { bg: 'bg-red-500/10', border: 'border-red-500/20', badge: 'bg-red-500', text: 'text-red-400' }
+            }[risk.risk_color] || { bg: 'bg-slate-700/30', border: 'border-slate-600/30', badge: 'bg-slate-500', text: 'text-slate-400' };
+
+            html += `
+                <a href="/risikoer/${risk.id}" class="group flex items-center justify-between p-4 rounded-xl ${colorConfig.bg} border ${colorConfig.border} hover:bg-opacity-75 transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="w-8 h-8 rounded-lg ${colorConfig.bg} flex items-center justify-center font-mono font-bold ${colorConfig.text}">
+                            ${risk.risk_score}
+                        </div>
+                        <div class="flex flex-col">
+                            <span class="text-sm font-medium text-slate-200 group-hover:text-white transition-colors">${risk.title}</span>
+                            ${risk.project_name ? `<span class="text-xs text-slate-500">${risk.project_name}</span>` : ''}
+                        </div>
+                    </div>
+                    <svg class="w-4 h-4 text-slate-500 group-hover:text-slate-300 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            `;
+        });
+
+        container.innerHTML = html;
+    } catch (error) {
+        console.error('Failed to load risks:', error);
+    }
+}
+
+// Initialize immediately - works for both initial load and HTMX navigation
+initDashboard();
+</script>
+{% endblock %}

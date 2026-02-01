@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+
+{% block page_title %}Tiltak{% endblock %}
+
+{% block content %}
+<div id="action-detail"
+     hx-get="/api/v1/actions/{{ action_id }}"
+     hx-trigger="load"
+     hx-target="#action-detail"
+     hx-swap="innerHTML">
+    <div class="animate-pulse">
+        <div class="h-8 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div class="h-4 bg-gray-200 rounded w-full mb-2"></div>
+    </div>
+</div>
+
+<script>
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.pathInfo.requestPath === '/api/v1/actions/{{ action_id }}' && evt.detail.successful) {
+        const action = JSON.parse(evt.detail.xhr.responseText);
+        evt.detail.target.innerHTML = `
+            <div class="bg-white shadow rounded-lg">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-2xl font-bold text-gray-900">${action.title}</h2>
+                </div>
+                <div class="px-6 py-4">
+                    <p class="text-gray-700">${action.description || 'Ingen beskrivelse'}</p>
+                    <div class="mt-4 grid grid-cols-2 gap-4">
+                        <div>
+                            <p class="text-sm text-gray-500">Prioritet</p>
+                            <p class="font-medium">${action.priority_label}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Status</p>
+                            <p class="font-medium">${action.status_label}</p>
+                        </div>
+                        <div>
+                            <p class="text-sm text-gray-500">Frist</p>
+                            <p class="font-medium">${action.due_date || '-'}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="px-6 py-4 border-t border-gray-200">
+                    <a href="/tiltak" class="text-blue-600 hover:text-blue-800">Tilbake til liste</a>
+                </div>
+            </div>
+        `;
+    }
+});
+</script>
+{% endblock %}

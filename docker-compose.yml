@@ -1,0 +1,46 @@
+# NetROS Docker Compose Configuration
+version: "3.8"
+
+services:
+  netros:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: netros-app
+    ports:
+      - "8000:8000"
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://netros:${POSTGRES_PASSWORD:-netros123}@db:5432/netros
+      - SECRET_KEY=${SECRET_KEY:-change-this-in-production}
+      - DEBUG=false
+      - LOG_LEVEL=INFO
+      - COMPANY_NAME=${COMPANY_NAME:-NEAS AS}
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - ./uploads:/app/uploads
+    restart: unless-stopped
+
+  db:
+    image: postgres:15-alpine
+    container_name: netros-db
+    environment:
+      - POSTGRES_USER=netros
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-netros123}
+      - POSTGRES_DB=netros
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U netros"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+
+networks:
+  default:
+    name: netros-network

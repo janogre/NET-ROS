@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block page_title %}Assets{% endblock %}
+
+{% block header %}
+<header class="border-b border-slate-800/50">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="animate-fade-in">
+                <h1 class="text-3xl font-bold tracking-tight text-white">Assets</h1>
+                <p class="mt-1 text-sm text-slate-400">Infrastruktur og systemer under forvaltning</p>
+            </div>
+            <button onclick="openAssetModal()"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-900 bg-gradient-to-r from-blue-500 to-blue-400 shadow-lg hover:shadow-blue-500/25 transition-all animate-fade-in" style="animation-delay: 0.2s; opacity: 0;">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Ny asset
+            </button>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Filters -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 animate-slide-up stagger-1" style="opacity: 0;">
+        <div class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Kategori</label>
+                <select id="category-filter" onchange="filterAssets()"
+                        class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-slate-200 text-sm py-2.5 px-4 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all">
+                    <option value="">Alle kategorier</option>
+                    <option value="kjernenett">Kjernenett</option>
+                    <option value="aksessnett">Aksessnett</option>
+                    <option value="radiosone">Radiosone</option>
+                    <option value="kundesegment">Kundesegment</option>
+                    <option value="datasenter">Datasenter</option>
+                    <option value="transport">Transport</option>
+                    <option value="kraft">Kraft</option>
+                    <option value="annet">Annet</option>
+                </select>
+            </div>
+            <button onclick="filterAssets()" class="px-4 py-2.5 rounded-xl bg-slate-700/50 border border-slate-600/50 text-slate-300 text-sm font-medium hover:bg-slate-700 hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Asset List -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 overflow-hidden animate-slide-up stagger-2" style="opacity: 0;">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-slate-700/50">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Navn</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Type</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Kategori</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Kritikalitet</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Lokasjon</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Handlinger</th>
+                    </tr>
+                </thead>
+                <tbody id="assets-table-body"
+                       class="divide-y divide-slate-700/30"
+                       hx-get="/api/v1/assets"
+                       hx-trigger="load"
+                       hx-target="#assets-table-body"
+                       hx-swap="innerHTML">
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-8 h-8 border-2 border-blue-500/30 border-t-blue-500 rounded-full animate-spin"></div>
+                                <span class="text-sm text-slate-500">Laster assets...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Asset Modal -->
+<div id="asset-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeAssetModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-slate-800 border border-slate-700/50 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden animate-slide-up">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/80">
+                <h3 class="text-lg font-semibold text-white" id="asset-modal-title">Ny asset</h3>
+                <button onclick="closeAssetModal()" class="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <div class="overflow-y-auto max-h-[calc(90vh-140px)]">
+                <form id="asset-form" class="p-6 space-y-5">
+                    <input type="hidden" id="asset-id" name="id">
+
+                    <div>
+                        <label for="asset-name" class="block text-sm font-medium text-slate-300 mb-2">Navn *</label>
+                        <input type="text" id="asset-name" name="name" required
+                               class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all"
+                               placeholder="Beskrivende navn">
+                    </div>
+
+                    <div>
+                        <label for="asset-description" class="block text-sm font-medium text-slate-300 mb-2">Beskrivelse</label>
+                        <textarea id="asset-description" name="description" rows="2"
+                                  class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/20 transition-all resize-none"
+                                  placeholder="Kort beskrivelse av asseten..."></textarea>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="asset-type" class="block text-sm font-medium text-slate-300 mb-2">Type</label>
+                            <select id="asset-type" name="asset_type"
+                                    class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-blue-500/50 transition-all">
+                                <option value="fysisk">Fysisk</option>
+                                <option value="virtuell">Virtuell</option>
+                                <option value="tjeneste">Tjeneste</option>
+                                <option value="nettverk">Nettverk</option>
+                                <option value="lokasjon">Lokasjon</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label for="asset-category" class="block text-sm font-medium text-slate-300 mb-2">Kategori</label>
+                            <select id="asset-category" name="category"
+                                    class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-blue-500/50 transition-all">
+                                <option value="kjernenett">Kjernenett</option>
+                                <option value="aksessnett">Aksessnett</option>
+                                <option value="radiosone">Radiosone</option>
+                                <option value="kundesegment">Kundesegment</option>
+                                <option value="datasenter">Datasenter</option>
+                                <option value="transport">Transport</option>
+                                <option value="kraft">Kraft</option>
+                                <option value="annet">Annet</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="asset-criticality" class="block text-sm font-medium text-slate-300 mb-2">Kritikalitet</label>
+                        <select id="asset-criticality" name="criticality"
+                                class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-blue-500/50 transition-all">
+                            <option value="1">1 - Svært lav</option>
+                            <option value="2">2 - Lav</option>
+                            <option value="3" selected>3 - Middels</option>
+                            <option value="4">4 - Høy</option>
+                            <option value="5">5 - Kritisk</option>
+                        </select>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="asset-location" class="block text-sm font-medium text-slate-300 mb-2">Lokasjon</label>
+                            <input type="text" id="asset-location" name="location"
+                                   class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-blue-500/50 transition-all"
+                                   placeholder="Fysisk plassering">
+                        </div>
+                        <div>
+                            <label for="asset-ip" class="block text-sm font-medium text-slate-300 mb-2">IP-adresse</label>
+                            <input type="text" id="asset-ip" name="ip_address"
+                                   class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
+                                   placeholder="192.168.x.x">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="asset-manufacturer" class="block text-sm font-medium text-slate-300 mb-2">Produsent</label>
+                            <input type="text" id="asset-manufacturer" name="manufacturer"
+                                   class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-blue-500/50 transition-all"
+                                   placeholder="F.eks. Cisco, Juniper">
+                        </div>
+                        <div>
+                            <label for="asset-model" class="block text-sm font-medium text-slate-300 mb-2">Modell</label>
+                            <input type="text" id="asset-model" name="model"
+                                   class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-blue-500/50 transition-all"
+                                   placeholder="Modellnummer">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label for="asset-serial" class="block text-sm font-medium text-slate-300 mb-2">Serienummer</label>
+                        <input type="text" id="asset-serial" name="serial_number"
+                               class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-blue-500/50 transition-all font-mono"
+                               placeholder="Unikt serienummer">
+                    </div>
+                </form>
+            </div>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-slate-700/50 flex justify-end gap-3 bg-slate-800/80">
+                <button onclick="closeAssetModal()"
+                        class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-300 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-700 hover:text-white transition-all">
+                    Avbryt
+                </button>
+                <button onclick="saveAsset()"
+                        class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-blue-500 to-blue-400 hover:shadow-lg hover:shadow-blue-500/25 transition-all">
+                    Lagre
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openAssetModal(assetId = null) {
+    document.getElementById('asset-modal').classList.remove('hidden');
+    document.getElementById('asset-modal-title').textContent = assetId ? 'Rediger asset' : 'Ny asset';
+    document.getElementById('asset-id').value = assetId || '';
+
+    if (assetId) {
+        fetch(`/api/v1/assets/${assetId}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('asset-name').value = data.name;
+                document.getElementById('asset-description').value = data.description || '';
+                document.getElementById('asset-type').value = data.asset_type;
+                document.getElementById('asset-category').value = data.category;
+                document.getElementById('asset-criticality').value = data.criticality;
+                document.getElementById('asset-location').value = data.location || '';
+                document.getElementById('asset-ip').value = data.ip_address || '';
+                document.getElementById('asset-manufacturer').value = data.manufacturer || '';
+                document.getElementById('asset-model').value = data.model || '';
+                document.getElementById('asset-serial').value = data.serial_number || '';
+            });
+    } else {
+        document.getElementById('asset-form').reset();
+    }
+}
+
+function closeAssetModal() {
+    document.getElementById('asset-modal').classList.add('hidden');
+}
+
+function saveAsset() {
+    const assetId = document.getElementById('asset-id').value;
+    const data = {
+        name: document.getElementById('asset-name').value,
+        description: document.getElementById('asset-description').value,
+        asset_type: document.getElementById('asset-type').value,
+        category: document.getElementById('asset-category').value,
+        criticality: parseInt(document.getElementById('asset-criticality').value),
+        location: document.getElementById('asset-location').value,
+        ip_address: document.getElementById('asset-ip').value,
+        manufacturer: document.getElementById('asset-manufacturer').value,
+        model: document.getElementById('asset-model').value,
+        serial_number: document.getElementById('asset-serial').value,
+    };
+
+    const method = assetId ? 'PATCH' : 'POST';
+    const url = assetId ? `/api/v1/assets/${assetId}` : '/api/v1/assets';
+
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(r => {
+        if (r.ok) {
+            closeAssetModal();
+            htmx.trigger('#assets-table-body', 'load');
+        } else {
+            r.json().then(err => alert(err.detail || 'Feil ved lagring'));
+        }
+    });
+}
+
+function deleteAsset(id) {
+    if (confirm('Er du sikker på at du vil slette denne asseten?')) {
+        fetch(`/api/v1/assets/${id}`, { method: 'DELETE' })
+            .then(r => {
+                if (r.ok) {
+                    htmx.trigger('#assets-table-body', 'load');
+                }
+            });
+    }
+}
+
+function filterAssets() {
+    const category = document.getElementById('category-filter').value;
+    let url = '/api/v1/assets?';
+    if (category) url += `category=${category}&`;
+    htmx.ajax('GET', url, '#assets-table-body');
+}
+
+// Format assets table response
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.pathInfo.requestPath.startsWith('/api/v1/assets') && evt.detail.successful) {
+        const data = JSON.parse(evt.detail.xhr.responseText);
+        if (Array.isArray(data)) {
+            let html = '';
+            const critConfig = {
+                1: { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400' },
+                2: { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400' },
+                3: { bg: 'bg-yellow-500/10', border: 'border-yellow-500/30', text: 'text-yellow-400' },
+                4: { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400' },
+                5: { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400' }
+            };
+
+            data.forEach(asset => {
+                const config = critConfig[asset.criticality] || critConfig[3];
+                html += `
+                    <tr class="group hover:bg-slate-700/20 cursor-pointer transition-colors" onclick="openAssetModal(${asset.id})">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2m-2-4h.01M17 16h.01"/>
+                                    </svg>
+                                </div>
+                                <div class="text-sm font-medium text-white group-hover:text-blue-400 transition-colors">${asset.name}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-xs font-medium text-slate-400 uppercase">${asset.asset_type}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2.5 py-1 rounded-lg bg-slate-700/50 text-xs font-medium text-slate-300">${asset.category}</span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center justify-center w-8 h-8 rounded-lg ${config.bg} border ${config.border} ${config.text} text-sm font-bold font-mono">
+                                ${asset.criticality}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-400">${asset.location || '-'}</td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right" onclick="event.stopPropagation()">
+                            <button onclick="deleteAsset(${asset.id})" class="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            if (html === '') {
+                html = `
+                    <tr>
+                        <td colspan="6" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-slate-700/50 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M5 12h14M5 12a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v4a2 2 0 01-2 2M5 12a2 2 0 00-2 2v4a2 2 0 002 2h14a2 2 0 002-2v-4a2 2 0 00-2-2"/>
+                                    </svg>
+                                </div>
+                                <span class="text-sm text-slate-500">Ingen assets funnet</span>
+                                <button onclick="openAssetModal()" class="mt-2 text-sm text-blue-400 hover:text-blue-300 transition-colors">
+                                    Registrer ny asset &rarr;
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+            evt.detail.target.innerHTML = html;
+        }
+    }
+});
+</script>
+{% endblock %}

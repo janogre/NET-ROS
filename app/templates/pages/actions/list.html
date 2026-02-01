@@ -1,0 +1,332 @@
+{% extends "base.html" %}
+
+{% block page_title %}Tiltak{% endblock %}
+
+{% block header %}
+<header class="border-b border-slate-800/50">
+    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div class="animate-fade-in">
+                <h1 class="text-3xl font-bold tracking-tight text-white">Tiltak</h1>
+                <p class="mt-1 text-sm text-slate-400">Spor og administrer risikoreduserende tiltak</p>
+            </div>
+            <button onclick="openActionModal()"
+                    class="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold text-slate-900 bg-gradient-to-r from-emerald-500 to-emerald-400 shadow-lg hover:shadow-emerald-500/25 transition-all animate-fade-in" style="animation-delay: 0.2s; opacity: 0;">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                </svg>
+                Nytt tiltak
+            </button>
+        </div>
+    </div>
+</header>
+{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Filters -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 p-4 animate-slide-up stagger-1" style="opacity: 0;">
+        <div class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-[200px]">
+                <label class="block text-xs font-medium text-slate-400 uppercase tracking-wider mb-2">Status</label>
+                <select id="action-status-filter" onchange="filterActions()"
+                        class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-slate-200 text-sm py-2.5 px-4 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all">
+                    <option value="">Alle statuser</option>
+                    <option value="planlagt">Planlagt</option>
+                    <option value="pågår">Pågår</option>
+                    <option value="fullført">Fullført</option>
+                    <option value="avbrutt">Avbrutt</option>
+                </select>
+            </div>
+            <button onclick="showOverdue()" class="px-4 py-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-400 text-sm font-medium hover:bg-red-500/20 transition-all">
+                <span class="flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                    Vis forfalte
+                </span>
+            </button>
+            <button onclick="filterActions()" class="px-4 py-2.5 rounded-xl bg-slate-700/50 border border-slate-600/50 text-slate-300 text-sm font-medium hover:bg-slate-700 hover:text-white transition-all">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                </svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Actions List -->
+    <div class="rounded-2xl bg-slate-800/50 border border-slate-700/50 overflow-hidden animate-slide-up stagger-2" style="opacity: 0;">
+        <div class="overflow-x-auto">
+            <table class="w-full">
+                <thead>
+                    <tr class="border-b border-slate-700/50">
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Tiltak</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Prioritet</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Status</th>
+                        <th class="px-6 py-4 text-left text-xs font-semibold text-slate-400 uppercase tracking-wider">Frist</th>
+                        <th class="px-6 py-4 text-right text-xs font-semibold text-slate-400 uppercase tracking-wider">Handlinger</th>
+                    </tr>
+                </thead>
+                <tbody id="actions-table-body"
+                       class="divide-y divide-slate-700/30"
+                       hx-get="/api/v1/actions"
+                       hx-trigger="load"
+                       hx-target="#actions-table-body"
+                       hx-swap="innerHTML">
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-8 h-8 border-2 border-emerald-500/30 border-t-emerald-500 rounded-full animate-spin"></div>
+                                <span class="text-sm text-slate-500">Laster tiltak...</span>
+                            </div>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Action Modal -->
+<div id="action-modal" class="fixed inset-0 z-50 hidden">
+    <div class="absolute inset-0 bg-slate-950/80 backdrop-blur-sm" onclick="closeActionModal()"></div>
+    <div class="flex items-center justify-center min-h-screen p-4">
+        <div class="relative bg-slate-800 border border-slate-700/50 rounded-2xl shadow-2xl max-w-lg w-full overflow-hidden animate-slide-up">
+            <!-- Modal Header -->
+            <div class="px-6 py-4 border-b border-slate-700/50 flex justify-between items-center bg-slate-800/80">
+                <h3 class="text-lg font-semibold text-white" id="action-modal-title">Nytt tiltak</h3>
+                <button onclick="closeActionModal()" class="w-8 h-8 rounded-lg bg-slate-700/50 flex items-center justify-center text-slate-400 hover:text-white hover:bg-slate-700 transition-all">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Modal Body -->
+            <form id="action-form" class="p-6 space-y-5">
+                <input type="hidden" id="action-id" name="id">
+
+                <div>
+                    <label for="action-title" class="block text-sm font-medium text-slate-300 mb-2">Tittel *</label>
+                    <input type="text" id="action-title" name="title" required
+                           class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all"
+                           placeholder="Kort beskrivende tittel">
+                </div>
+
+                <div>
+                    <label for="action-description" class="block text-sm font-medium text-slate-300 mb-2">Beskrivelse</label>
+                    <textarea id="action-description" name="description" rows="3"
+                              class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-emerald-500/50 focus:ring-1 focus:ring-emerald-500/20 transition-all resize-none"
+                              placeholder="Detaljert beskrivelse av tiltaket..."></textarea>
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="action-priority" class="block text-sm font-medium text-slate-300 mb-2">Prioritet</label>
+                        <select id="action-priority" name="priority"
+                                class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-emerald-500/50 transition-all">
+                            <option value="lav">Lav</option>
+                            <option value="middels" selected>Middels</option>
+                            <option value="høy">Høy</option>
+                            <option value="kritisk">Kritisk</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="action-status" class="block text-sm font-medium text-slate-300 mb-2">Status</label>
+                        <select id="action-status" name="status"
+                                class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-2.5 px-4 focus:outline-none focus:border-emerald-500/50 transition-all">
+                            <option value="planlagt">Planlagt</option>
+                            <option value="pågår">Pågår</option>
+                            <option value="fullført">Fullført</option>
+                            <option value="avbrutt">Avbrutt</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="action-due-date" class="block text-sm font-medium text-slate-300 mb-2">Frist</label>
+                    <input type="date" id="action-due-date" name="due_date"
+                           class="w-full rounded-xl bg-slate-900/50 border border-slate-600/50 text-white text-sm py-3 px-4 focus:outline-none focus:border-emerald-500/50 transition-all">
+                </div>
+            </form>
+
+            <!-- Modal Footer -->
+            <div class="px-6 py-4 border-t border-slate-700/50 flex justify-end gap-3 bg-slate-800/80">
+                <button onclick="closeActionModal()"
+                        class="px-5 py-2.5 rounded-xl text-sm font-medium text-slate-300 bg-slate-700/50 border border-slate-600/50 hover:bg-slate-700 hover:text-white transition-all">
+                    Avbryt
+                </button>
+                <button onclick="saveAction()"
+                        class="px-5 py-2.5 rounded-xl text-sm font-semibold text-white bg-gradient-to-r from-emerald-500 to-emerald-400 hover:shadow-lg hover:shadow-emerald-500/25 transition-all">
+                    Lagre
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function openActionModal(actionId = null) {
+    document.getElementById('action-modal').classList.remove('hidden');
+    document.getElementById('action-modal-title').textContent = actionId ? 'Rediger tiltak' : 'Nytt tiltak';
+    document.getElementById('action-id').value = actionId || '';
+
+    if (actionId) {
+        fetch(`/api/v1/actions/${actionId}`)
+            .then(r => r.json())
+            .then(data => {
+                document.getElementById('action-title').value = data.title;
+                document.getElementById('action-description').value = data.description || '';
+                document.getElementById('action-priority').value = data.priority;
+                document.getElementById('action-status').value = data.status;
+                document.getElementById('action-due-date').value = data.due_date || '';
+            });
+    } else {
+        document.getElementById('action-form').reset();
+    }
+}
+
+function closeActionModal() {
+    document.getElementById('action-modal').classList.add('hidden');
+}
+
+function saveAction() {
+    const actionId = document.getElementById('action-id').value;
+    const data = {
+        title: document.getElementById('action-title').value,
+        description: document.getElementById('action-description').value,
+        priority: document.getElementById('action-priority').value,
+        status: document.getElementById('action-status').value,
+        due_date: document.getElementById('action-due-date').value || null,
+    };
+
+    const method = actionId ? 'PATCH' : 'POST';
+    const url = actionId ? `/api/v1/actions/${actionId}` : '/api/v1/actions';
+
+    fetch(url, {
+        method: method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+    })
+    .then(r => {
+        if (r.ok) {
+            closeActionModal();
+            htmx.trigger('#actions-table-body', 'load');
+        } else {
+            r.json().then(err => alert(err.detail || 'Feil ved lagring'));
+        }
+    });
+}
+
+function deleteAction(id) {
+    if (confirm('Er du sikker på at du vil slette dette tiltaket?')) {
+        fetch(`/api/v1/actions/${id}`, { method: 'DELETE' })
+            .then(r => {
+                if (r.ok) {
+                    htmx.trigger('#actions-table-body', 'load');
+                }
+            });
+    }
+}
+
+function filterActions() {
+    const status = document.getElementById('action-status-filter').value;
+    let url = '/api/v1/actions?';
+    if (status) url += `status_filter=${status}&`;
+    htmx.ajax('GET', url, '#actions-table-body');
+}
+
+function showOverdue() {
+    htmx.ajax('GET', '/api/v1/actions/overdue', '#actions-table-body');
+}
+
+// Format actions table response
+document.body.addEventListener('htmx:afterRequest', function(evt) {
+    if (evt.detail.pathInfo.requestPath.startsWith('/api/v1/actions') && evt.detail.successful) {
+        const data = JSON.parse(evt.detail.xhr.responseText);
+        if (Array.isArray(data)) {
+            let html = '';
+            const priorityConfig = {
+                'lav': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400' },
+                'middels': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400' },
+                'hoy': { bg: 'bg-orange-500/10', border: 'border-orange-500/30', text: 'text-orange-400' },
+                'kritisk': { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400' }
+            };
+            const statusConfig = {
+                'planlagt': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-400', icon: 'M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z' },
+                'pågår': { bg: 'bg-blue-500/10', border: 'border-blue-500/30', text: 'text-blue-400', icon: 'M13 10V3L4 14h7v7l9-11h-7z' },
+                'fullført': { bg: 'bg-emerald-500/10', border: 'border-emerald-500/30', text: 'text-emerald-400', icon: 'M5 13l4 4L19 7' },
+                'avbrutt': { bg: 'bg-slate-500/10', border: 'border-slate-500/30', text: 'text-slate-500', icon: 'M6 18L18 6M6 6l12 12' },
+                'forfalt': { bg: 'bg-red-500/10', border: 'border-red-500/30', text: 'text-red-400', icon: 'M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z' }
+            };
+            const priorityLabels = { 'lav': 'Lav', 'middels': 'Middels', 'høy': 'Høy', 'kritisk': 'Kritisk' };
+            const statusLabels = { 'planlagt': 'Planlagt', 'pågår': 'Pågår', 'fullført': 'Fullført', 'avbrutt': 'Avbrutt' };
+
+            data.forEach(action => {
+                const isOverdue = action.is_overdue;
+                const pConfig = priorityConfig[action.priority] || priorityConfig['middels'];
+                const sConfig = isOverdue ? statusConfig['forfalt'] : (statusConfig[action.status] || statusConfig['planlagt']);
+                const statusLabel = isOverdue ? 'Forfalt' : (statusLabels[action.status] || action.status);
+
+                html += `
+                    <tr class="group hover:bg-slate-700/20 cursor-pointer transition-colors ${isOverdue ? 'bg-red-500/5' : ''}" onclick="openActionModal(${action.id})">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl ${sConfig.bg} border ${sConfig.border} flex items-center justify-center flex-shrink-0">
+                                    <svg class="w-5 h-5 ${sConfig.text}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="${sConfig.icon}"/>
+                                    </svg>
+                                </div>
+                                <div class="text-sm font-medium text-white group-hover:text-emerald-400 transition-colors">${action.title}</div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex px-2.5 py-1 rounded-lg ${pConfig.bg} border ${pConfig.border} text-xs font-medium ${pConfig.text}">
+                                ${priorityLabels[action.priority] || action.priority}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg ${sConfig.bg} border ${sConfig.border} text-xs font-medium ${sConfig.text}">
+                                ${statusLabel}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="text-sm font-mono ${isOverdue ? 'text-red-400 font-semibold' : 'text-slate-400'}">
+                                ${action.due_date ? new Date(action.due_date).toLocaleDateString('nb-NO') : '-'}
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-right" onclick="event.stopPropagation()">
+                            <button onclick="deleteAction(${action.id})" class="p-2 rounded-lg text-slate-500 hover:text-red-400 hover:bg-red-500/10 transition-all">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                                </svg>
+                            </button>
+                        </td>
+                    </tr>
+                `;
+            });
+            if (html === '') {
+                html = `
+                    <tr>
+                        <td colspan="5" class="px-6 py-12 text-center">
+                            <div class="flex flex-col items-center gap-3">
+                                <div class="w-12 h-12 rounded-xl bg-slate-700/50 flex items-center justify-center">
+                                    <svg class="w-6 h-6 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/>
+                                    </svg>
+                                </div>
+                                <span class="text-sm text-slate-500">Ingen tiltak funnet</span>
+                                <button onclick="openActionModal()" class="mt-2 text-sm text-emerald-400 hover:text-emerald-300 transition-colors">
+                                    Opprett nytt tiltak &rarr;
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+            }
+            evt.detail.target.innerHTML = html;
+        }
+    }
+});
+</script>
+{% endblock %}
