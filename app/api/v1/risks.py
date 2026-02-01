@@ -278,3 +278,161 @@ async def remove_asset_from_risk(
 
     await db.delete(asset_risk)
     await db.commit()
+
+
+# NSM Mapping endpoints
+
+@router.get("/{risk_id}/nsm-mappings")
+async def get_risk_nsm_mappings(
+    risk_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_active_user)],
+) -> list[dict]:
+    """Hent NSM-prinsipper koblet til en risiko."""
+    from app.models.risk import NSMMapping
+    from app.models.nsm import NSMPrinciple
+
+    result = await db.execute(select(Risk).where(Risk.id == risk_id))
+    risk = result.scalar_one_or_none()
+
+    if not risk:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Risiko ikke funnet",
+        )
+
+    mappings_result = await db.execute(
+        select(NSMMapping, NSMPrinciple)
+        .join(NSMPrinciple)
+        .where(NSMMapping.risk_id == risk_id)
+        .order_by(NSMPrinciple.sort_order)
+    )
+    mappings = mappings_result.all()
+
+    return [
+        {
+            "mapping_id": m.NSMMapping.id,
+            "principle_id": p.id,
+            "code": p.code,
+            "title": p.title,
+            "category": p.category.value,
+            "notes": m.NSMMapping.notes,
+        }
+        for m, p in [(row[0], row[1]) for row in mappings]
+    ]
+
+
+@router.post("/{risk_id}/nsm-mappings/{principle_id}", status_code=status.HTTP_201_CREATED)
+async def add_nsm_mapping_to_risk(
+    risk_id: int,
+    principle_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[
+        User,
+        Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG)),
+    ],
+    notes: str | None = None,
+) -> dict:
+    """Koble et NSM-prinsipp til en risiko."""
+    from app.models.risk import NSMMapping
+    from app.models.nsm import NSMPrinciple
+
+    # Verify risk exists
+    result = await db.execute(select(Risk).where(Risk.id == risk_id))
+    if not result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Risiko ikke funnet",
+        )
+
+    # Verify principle exists
+    result = await db.execute(select(NSMPrinciple).where(NSMPrinciple.id == principle_id))
+    principle = result.scalar_one_or_none()
+    if not principle:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="NSM-prinsipp ikke funnet",
+        )
+
+    # Check if already linked
+    result = await db.execute(
+        select(NSMMapping).where(
+            NSMMapping.risk_id == risk_id,
+            NSMMapping.nsm_principle_id == principle_id,
+        )
+    )
+    if result.scalar_one_or_none():
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail="NSM-prinsipp er allerede koblet til denne risikoen",
+        )
+
+    mapping = NSMMapping(
+        risk_id=risk_id,
+        nsm_principle_id=principle_id,
+        notes=notes,
+    )
+    db.add(mapping)
+    await db.commit()
+
+    return {
+        "message": "NSM-prinsipp koblet til risiko",
+        "principle_code": principle.code,
+        "principle_title": principle.title,
+    }
+
+
+@router.delete("/{risk_id}/nsm-mappings/{principle_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def remove_nsm_mapping_from_risk(
+    risk_id: int,
+    principle_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[
+        User,
+        Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG)),
+    ],
+) -> None:
+    """Fjern kobling mellom NSM-prinsipp og risiko."""
+    from app.models.risk import NSMMapping
+
+    result = await db.execute(
+        select(NSMMapping).where(
+            NSMMapping.risk_id == risk_id,
+            NSMMapping.nsm_principle_id == principle_id,
+        )
+    )
+    mapping = result.scalar_one_or_none()
+
+    if not mapping:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="NSM-mapping ikke funnet",
+        )
+
+    await db.delete(mapping)
+    await db.commit()
+
+
+@router.get("/nsm-principles/all")
+async def list_all_nsm_principles(
+    db: Annotated[AsyncSession, Depends(get_db)],
+    _: Annotated[User, Depends(get_current_active_user)],
+) -> list[dict]:
+    """List alle tilgjengelige NSM-prinsipper."""
+    from app.models.nsm import NSMPrinciple
+
+    result = await db.execute(
+        select(NSMPrinciple).order_by(NSMPrinciple.sort_order)
+    )
+    principles = result.scalars().all()
+
+    return [
+        {
+            "id": p.id,
+            "code": p.code,
+            "title": p.title,
+            "category": p.category.value,
+            "description": p.description,
+        }
+        for p in principles
+    ]
