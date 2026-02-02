@@ -2,10 +2,10 @@
 Risikomodell med matrise-beregning for NetROS.
 """
 
-from datetime import date
+from datetime import date, datetime
 from enum import Enum
 
-from sqlalchemy import Date, ForeignKey, Integer, String, Text
+from sqlalchemy import Date, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -76,11 +76,24 @@ class Risk(Base, TimestampMixin):
     last_reviewed_at: Mapped[date | None] = mapped_column(Date, nullable=True)
     next_review_date: Mapped[date | None] = mapped_column(Date, nullable=True)
 
+    # Risk Acceptance (for akseptert-status)
+    accepted_by_id: Mapped[int | None] = mapped_column(
+        ForeignKey("users.id"), nullable=True
+    )
+    accepted_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    acceptance_rationale: Mapped[str | None] = mapped_column(Text, nullable=True)
+    acceptance_valid_until: Mapped[date | None] = mapped_column(Date, nullable=True)
+
     # Relationships
     project: Mapped["Project | None"] = relationship(back_populates="risks")
     owner: Mapped["User | None"] = relationship(
         back_populates="owned_risks",
         foreign_keys=[owner_id],
+    )
+    accepted_by: Mapped["User | None"] = relationship(
+        foreign_keys=[accepted_by_id],
     )
     owner_department: Mapped["Department | None"] = relationship(
         back_populates="owned_risks",

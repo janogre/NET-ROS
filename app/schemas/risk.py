@@ -70,8 +70,35 @@ class RiskResponse(RiskBase):
     risk_color: str
     project_name: str | None = None
     last_reviewed_at: date | None = None
+    # Acceptance fields
+    accepted_by_id: int | None = None
+    accepted_at: datetime | None = None
+    acceptance_rationale: str | None = None
+    acceptance_valid_until: date | None = None
     created_at: datetime
     updated_at: datetime
+
+    model_config = {"from_attributes": True}
+
+
+class RiskAcceptRequest(BaseModel):
+    """Schema for accepting a risk."""
+
+    rationale: str = Field(..., min_length=10, max_length=2000, description="Begrunnelse for aksept")
+    valid_until: date | None = Field(None, description="Akseptansen gjelder til denne datoen")
+
+
+class RiskAcceptResponse(BaseModel):
+    """Schema for risk acceptance response."""
+
+    id: int
+    title: str
+    status: RiskStatus
+    accepted_by_id: int
+    accepted_at: datetime
+    acceptance_rationale: str
+    acceptance_valid_until: date | None
+    message: str = "Risiko akseptert"
 
     model_config = {"from_attributes": True}
 

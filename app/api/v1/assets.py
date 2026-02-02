@@ -13,6 +13,7 @@ from app.database import get_db
 from app.models.asset import Asset
 from app.models.user import User, UserRole
 from app.schemas.asset import AssetCreate, AssetUpdate, AssetResponse
+from app.services.audit_service import AuditService
 
 router = APIRouter()
 
@@ -40,7 +41,7 @@ async def list_assets(
 async def create_asset(
     asset_data: AssetCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(
             require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG, UserRole.BRUKER)
@@ -64,6 +65,17 @@ async def create_asset(
         is_manual=True,
     )
     db.add(asset)
+    await db.flush()
+
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_create(
+        entity_type="asset",
+        entity_id=asset.id,
+        user=current_user,
+        values={"name": asset.name, "category": asset.category.value, "criticality": asset.criticality},
+    )
+
     await db.commit()
     await db.refresh(asset)
     return asset
@@ -93,7 +105,7 @@ async def update_asset(
     asset_id: int,
     asset_data: AssetUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(
             require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG, UserRole.BRUKER)
@@ -110,9 +122,31 @@ async def update_asset(
             detail="Asset ikke funnet",
         )
 
+    # Save old values for audit
+    old_values = {
+        "name": asset.name,
+        "category": asset.category.value,
+        "criticality": asset.criticality,
+    }
+
     update_data = asset_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(asset, field, value)
+
+    # Audit log
+    new_values = {
+        "name": asset.name,
+        "category": asset.category.value,
+        "criticality": asset.criticality,
+    }
+    audit_service = AuditService(db)
+    await audit_service.log_update(
+        entity_type="asset",
+        entity_id=asset.id,
+        user=current_user,
+        old_values=old_values,
+        new_values=new_values,
+    )
 
     await db.commit()
     await db.refresh(asset)
@@ -123,7 +157,7 @@ async def update_asset(
 async def delete_asset(
     asset_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG))],
+    current_user: Annotated[User, Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG))],
 ) -> None:
     """Slett en asset."""
     result = await db.execute(select(Asset).where(Asset.id == asset_id))
@@ -134,6 +168,15 @@ async def delete_asset(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Asset ikke funnet",
         )
+
+    # Audit log before delete
+    audit_service = AuditService(db)
+    await audit_service.log_delete(
+        entity_type="asset",
+        entity_id=asset.id,
+        user=current_user,
+        values={"name": asset.name, "category": asset.category.value},
+    )
 
     await db.delete(asset)
     await db.commit()

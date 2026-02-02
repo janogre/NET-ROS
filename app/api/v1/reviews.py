@@ -16,6 +16,7 @@ from app.models.review import Review, ReviewRisk, ReviewType
 from app.models.risk import Risk
 from app.models.user import User, UserRole
 from app.schemas.review import ReviewCreate, ReviewUpdate, ReviewResponse
+from app.services.audit_service import AuditService
 
 router = APIRouter()
 
@@ -109,6 +110,19 @@ async def create_review(
             if risk_result.scalar_one_or_none():
                 link = ReviewRisk(review_id=review.id, risk_id=risk_id)
                 db.add(link)
+
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_create(
+        entity_type="review",
+        entity_id=review.id,
+        user=current_user,
+        values={
+            "title": review.title,
+            "review_type": review.review_type.value,
+            "scheduled_date": review.scheduled_date.isoformat() if review.scheduled_date else None,
+        },
+    )
 
     await db.commit()
     await db.refresh(review)
@@ -218,7 +232,7 @@ async def update_review(
     review_id: int,
     review_data: ReviewUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG)),
     ],
@@ -234,6 +248,13 @@ async def update_review(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Gjennomgang ikke funnet",
         )
+
+    # Save old values for audit
+    old_values = {
+        "title": review.title,
+        "scheduled_date": review.scheduled_date.isoformat() if review.scheduled_date else None,
+        "conducted_date": review.conducted_date.isoformat() if review.conducted_date else None,
+    }
 
     update_data = review_data.model_dump(exclude_unset=True)
 
@@ -258,6 +279,21 @@ async def update_review(
     for field, value in update_data.items():
         setattr(review, field, value)
 
+    # Audit log
+    new_values = {
+        "title": review.title,
+        "scheduled_date": review.scheduled_date.isoformat() if review.scheduled_date else None,
+        "conducted_date": review.conducted_date.isoformat() if review.conducted_date else None,
+    }
+    audit_service = AuditService(db)
+    await audit_service.log_update(
+        entity_type="review",
+        entity_id=review.id,
+        user=current_user,
+        old_values=old_values,
+        new_values=new_values,
+    )
+
     await db.commit()
     await db.refresh(review)
     return review
@@ -267,7 +303,7 @@ async def update_review(
 async def complete_review(
     review_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG)),
     ],
@@ -295,6 +331,16 @@ async def complete_review(
     if next_review_date:
         review.next_review_date = next_review_date
 
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_update(
+        entity_type="review",
+        entity_id=review.id,
+        user=current_user,
+        old_values={"conducted_date": None},
+        new_values={"conducted_date": review.conducted_date.isoformat()},
+    )
+
     await db.commit()
     await db.refresh(review)
     return review
@@ -304,7 +350,7 @@ async def complete_review(
 async def delete_review(
     review_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(UserRole.ADMIN))],
+    current_user: Annotated[User, Depends(require_role(UserRole.ADMIN))],
 ) -> None:
     """Slett en gjennomgang."""
     result = await db.execute(
@@ -317,6 +363,15 @@ async def delete_review(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Gjennomgang ikke funnet",
         )
+
+    # Audit log before delete
+    audit_service = AuditService(db)
+    await audit_service.log_delete(
+        entity_type="review",
+        entity_id=review.id,
+        user=current_user,
+        values={"title": review.title, "review_type": review.review_type.value},
+    )
 
     await db.delete(review)
     await db.commit()

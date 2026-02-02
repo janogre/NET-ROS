@@ -6,6 +6,7 @@ Kjør: python scripts/init_nsm_principles.py
 
 import asyncio
 import sys
+from datetime import date
 from pathlib import Path
 
 # Add parent directory to path
@@ -14,6 +15,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from sqlalchemy import select
 from app.database import async_session_maker, init_db
 from app.models.nsm import NSMPrinciple, NSMCategory
+
+# NSM versjon
+NSM_VERSION = "2.0"
+NSM_EFFECTIVE_DATE = date(2023, 1, 1)  # NSM Grunnprinsipper 2.0 ble lansert 2023
 
 # NSM Grunnprinsipper data
 NSM_PRINCIPLES = [
@@ -71,6 +76,8 @@ async def seed_nsm_principles():
                 title=principle_data["title"],
                 description=principle_data.get("description"),
                 sort_order=principle_data["sort_order"],
+                version=NSM_VERSION,
+                effective_date=NSM_EFFECTIVE_DATE,
             )
             session.add(principle)
 

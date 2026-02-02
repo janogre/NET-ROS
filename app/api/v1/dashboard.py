@@ -347,6 +347,62 @@ async def get_alerts(
                 "criticality_label": supplier.criticality_label,
             })
 
+    # Expiring risk acceptances (30 days warning, 7 days danger)
+    from app.models.risk import RiskStatus
+
+    for days, alert_type in [(7, "danger"), (30, "warning")]:
+        if (alert_type == "danger" and not include_danger) or \
+           (alert_type == "warning" and not include_warning):
+            continue
+
+        expiry_date = date.today() + timedelta(days=days)
+        prev_date = date.today() + timedelta(days=days - 23) if days > 7 else date.today()
+
+        expiring_acceptance_result = await db.execute(
+            select(Risk).where(
+                Risk.status == RiskStatus.AKSEPTERT,
+                Risk.acceptance_valid_until.isnot(None),
+                Risk.acceptance_valid_until <= expiry_date,
+                Risk.acceptance_valid_until > prev_date if days > 7 else Risk.acceptance_valid_until >= date.today(),
+            )
+        )
+        expiring_acceptances = expiring_acceptance_result.scalars().all()
+        for risk in expiring_acceptances:
+            days_until = (risk.acceptance_valid_until - date.today()).days if risk.acceptance_valid_until else 0
+            alerts.append({
+                "type": alert_type,
+                "category": "akseptanse",
+                "message": f"Risikoakseptanse utløper om {days_until} dag(er): {risk.title}",
+                "entity_id": risk.id,
+                "entity_type": "risk",
+                "acceptance_valid_until": risk.acceptance_valid_until.isoformat() if risk.acceptance_valid_until else None,
+                "days_until_expiry": days_until,
+                "risk_score": risk.risk_score,
+            })
+
+    # Expired risk acceptances (danger)
+    if include_danger:
+        expired_acceptance_result = await db.execute(
+            select(Risk).where(
+                Risk.status == RiskStatus.AKSEPTERT,
+                Risk.acceptance_valid_until.isnot(None),
+                Risk.acceptance_valid_until < date.today(),
+            )
+        )
+        expired_acceptances = expired_acceptance_result.scalars().all()
+        for risk in expired_acceptances:
+            days_overdue = (date.today() - risk.acceptance_valid_until).days if risk.acceptance_valid_until else 0
+            alerts.append({
+                "type": "danger",
+                "category": "akseptanse",
+                "message": f"Risikoakseptanse utløpt ({days_overdue} dager siden): {risk.title}",
+                "entity_id": risk.id,
+                "entity_type": "risk",
+                "acceptance_valid_until": risk.acceptance_valid_until.isoformat() if risk.acceptance_valid_until else None,
+                "days_overdue": days_overdue,
+                "risk_score": risk.risk_score,
+            })
+
     # Sort alerts by type priority (danger > warning > info)
     type_priority = {"danger": 0, "warning": 1, "info": 2}
     alerts.sort(key=lambda x: type_priority.get(x["type"], 3))

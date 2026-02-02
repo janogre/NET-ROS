@@ -151,3 +151,137 @@ class AuditService:
             description=f"Bruker {user.username} logget ut",
             **kwargs,
         )
+
+    async def log_export(
+        self,
+        entity_type: str,
+        user: User,
+        export_format: str = "pdf",
+        **kwargs: Any,
+    ) -> AuditLog:
+        """Log an export action."""
+        return await self.log(
+            action=AuditAction.EXPORT,
+            entity_type=entity_type,
+            user=user,
+            description=f"Eksporterte {entity_type} som {export_format}",
+            **kwargs,
+        )
+
+    async def log_approve(
+        self,
+        entity_type: str,
+        entity_id: int,
+        user: User,
+        rationale: str | None = None,
+        **kwargs: Any,
+    ) -> AuditLog:
+        """Log an approval action (e.g., risk acceptance)."""
+        return await self.log(
+            action=AuditAction.APPROVE,
+            entity_type=entity_type,
+            entity_id=entity_id,
+            user=user,
+            new_values={"rationale": rationale} if rationale else None,
+            description=f"Godkjente {entity_type} #{entity_id}",
+            **kwargs,
+        )
+
+    async def get_entity_history(
+        self,
+        entity_type: str,
+        entity_id: int,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[AuditLog]:
+        """
+        Get audit history for a specific entity.
+
+        Args:
+            entity_type: Name of the entity (e.g., "risk", "asset")
+            entity_id: ID of the entity
+            limit: Maximum number of entries to return
+            offset: Number of entries to skip
+
+        Returns:
+            List of AuditLog entries ordered by timestamp descending
+        """
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        result = await self.db.execute(
+            select(AuditLog)
+            .options(selectinload(AuditLog.user))
+            .where(
+                AuditLog.entity_type == entity_type,
+                AuditLog.entity_id == entity_id,
+            )
+            .order_by(AuditLog.timestamp.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def get_user_activity(
+        self,
+        user_id: int,
+        limit: int = 50,
+        offset: int = 0,
+    ) -> list[AuditLog]:
+        """
+        Get audit history for a specific user.
+
+        Args:
+            user_id: ID of the user
+            limit: Maximum number of entries to return
+            offset: Number of entries to skip
+
+        Returns:
+            List of AuditLog entries ordered by timestamp descending
+        """
+        from sqlalchemy import select
+
+        result = await self.db.execute(
+            select(AuditLog)
+            .where(AuditLog.user_id == user_id)
+            .order_by(AuditLog.timestamp.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return list(result.scalars().all())
+
+    async def get_recent_activity(
+        self,
+        limit: int = 100,
+        offset: int = 0,
+        action_filter: AuditAction | None = None,
+        entity_type_filter: str | None = None,
+    ) -> list[AuditLog]:
+        """
+        Get recent audit activity.
+
+        Args:
+            limit: Maximum number of entries to return
+            offset: Number of entries to skip
+            action_filter: Optional filter by action type
+            entity_type_filter: Optional filter by entity type
+
+        Returns:
+            List of AuditLog entries ordered by timestamp descending
+        """
+        from sqlalchemy import select
+        from sqlalchemy.orm import selectinload
+
+        query = select(AuditLog).options(selectinload(AuditLog.user))
+
+        if action_filter:
+            query = query.where(AuditLog.action == action_filter)
+        if entity_type_filter:
+            query = query.where(AuditLog.entity_type == entity_type_filter)
+
+        result = await self.db.execute(
+            query.order_by(AuditLog.timestamp.desc())
+            .offset(offset)
+            .limit(limit)
+        )
+        return list(result.scalars().all())

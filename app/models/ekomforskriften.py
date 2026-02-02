@@ -3,9 +3,10 @@ Ekomforskriften-modell for NetROS.
 Forskrift om elektronisk kommunikasjonsnett og elektronisk kommunikasjonstjeneste.
 """
 
+from datetime import date
 from enum import Enum
 
-from sqlalchemy import ForeignKey, Integer, String, Text
+from sqlalchemy import Date, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.models.base import Base, TimestampMixin
@@ -52,6 +53,11 @@ class EkomPrinciple(Base, TimestampMixin):
     legal_text: Mapped[str | None] = mapped_column(Text, nullable=True)
     sort_order: Mapped[int] = mapped_column(Integer, default=0)
 
+    # Versjonering
+    version: Mapped[str] = mapped_column(String(20), default="2024", server_default="2024")
+    effective_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+    deprecated_date: Mapped[date | None] = mapped_column(Date, nullable=True)
+
     # Relationships
     risk_mappings: Mapped[list["EkomMapping"]] = relationship(
         back_populates="ekom_principle"
@@ -69,6 +75,21 @@ class EkomPrinciple(Base, TimestampMixin):
     def category_label(self) -> str:
         """Norsk label for kategori."""
         return self.category.value
+
+    @property
+    def is_deprecated(self) -> bool:
+        """Sjekk om paragrafen er utgått."""
+        if self.deprecated_date is None:
+            return False
+        return self.deprecated_date <= date.today()
+
+    @property
+    def is_active(self) -> bool:
+        """Sjekk om paragrafen er aktiv (gyldig og ikke utgått)."""
+        today = date.today()
+        if self.effective_date and self.effective_date > today:
+            return False
+        return not self.is_deprecated
 
 
 class EkomMapping(Base, TimestampMixin):

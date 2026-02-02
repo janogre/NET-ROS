@@ -15,6 +15,7 @@ from app.database import get_db
 from app.models.action import Action, ActionStatus, RiskAction
 from app.models.user import User, UserRole
 from app.schemas.action import ActionCreate, ActionUpdate, ActionResponse
+from app.services.audit_service import AuditService
 
 router = APIRouter()
 
@@ -87,6 +88,20 @@ async def create_action(
         risk_action = RiskAction(risk_id=risk_id, action_id=action.id)
         db.add(risk_action)
 
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_create(
+        entity_type="action",
+        entity_id=action.id,
+        user=current_user,
+        values={
+            "title": action.title,
+            "priority": action.priority.value,
+            "status": action.status.value,
+            "due_date": action.due_date.isoformat() if action.due_date else None,
+        },
+    )
+
     await db.commit()
     await db.refresh(action)
     return action
@@ -120,7 +135,7 @@ async def update_action(
     action_id: int,
     action_data: ActionUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(
             require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG, UserRole.BRUKER)
@@ -136,6 +151,14 @@ async def update_action(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Tiltak ikke funnet",
         )
+
+    # Save old values for audit
+    old_values = {
+        "title": action.title,
+        "status": action.status.value,
+        "priority": action.priority.value,
+        "due_date": action.due_date.isoformat() if action.due_date else None,
+    }
 
     update_data = action_data.model_dump(exclude_unset=True)
     risk_ids = update_data.pop("risk_ids", None)
@@ -156,6 +179,22 @@ async def update_action(
             risk_action = RiskAction(risk_id=risk_id, action_id=action.id)
             db.add(risk_action)
 
+    # Audit log
+    new_values = {
+        "title": action.title,
+        "status": action.status.value,
+        "priority": action.priority.value,
+        "due_date": action.due_date.isoformat() if action.due_date else None,
+    }
+    audit_service = AuditService(db)
+    await audit_service.log_update(
+        entity_type="action",
+        entity_id=action.id,
+        user=current_user,
+        old_values=old_values,
+        new_values=new_values,
+    )
+
     await db.commit()
     await db.refresh(action)
     return action
@@ -166,7 +205,7 @@ async def update_action_status(
     action_id: int,
     new_status: ActionStatus,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(
             require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG, UserRole.BRUKER)
@@ -183,9 +222,20 @@ async def update_action_status(
             detail="Tiltak ikke funnet",
         )
 
+    old_status = action.status.value
     action.status = new_status
     if new_status == ActionStatus.FULLFORT:
         action.completed_at = datetime.now(timezone.utc)
+
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_update(
+        entity_type="action",
+        entity_id=action.id,
+        user=current_user,
+        old_values={"status": old_status},
+        new_values={"status": new_status.value},
+    )
 
     await db.commit()
     await db.refresh(action)
@@ -196,7 +246,7 @@ async def update_action_status(
 async def delete_action(
     action_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG))],
+    current_user: Annotated[User, Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG))],
 ) -> None:
     """Slett et tiltak."""
     result = await db.execute(select(Action).where(Action.id == action_id))
@@ -207,6 +257,15 @@ async def delete_action(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Tiltak ikke funnet",
         )
+
+    # Audit log before delete
+    audit_service = AuditService(db)
+    await audit_service.log_delete(
+        entity_type="action",
+        entity_id=action.id,
+        user=current_user,
+        values={"title": action.title, "status": action.status.value},
+    )
 
     await db.delete(action)
     await db.commit()

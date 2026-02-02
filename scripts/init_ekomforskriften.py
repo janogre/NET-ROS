@@ -6,6 +6,7 @@ Forskrift om elektronisk kommunikasjonsnett og elektronisk kommunikasjonstjenest
 
 import asyncio
 import sys
+from datetime import date
 from pathlib import Path
 
 # Add parent directory to path
@@ -14,6 +15,10 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from sqlalchemy import select
 from app.database import async_session
 from app.models.ekomforskriften import EkomPrinciple, EkomCategory, EkomParagraph
+
+# Ekomforskriften versjon
+EKOM_VERSION = "2024"
+EKOM_EFFECTIVE_DATE = date(2024, 1, 1)
 
 
 EKOM_PRINCIPLES = [
@@ -125,9 +130,15 @@ async def init_ekom_principles():
                 print(f"  Oppdaterer: § {principle_data['code']} - {principle_data['title']}")
                 for key, value in principle_data.items():
                     setattr(existing, key, value)
+                existing.version = EKOM_VERSION
+                existing.effective_date = EKOM_EFFECTIVE_DATE
             else:
                 print(f"  Oppretter: § {principle_data['code']} - {principle_data['title']}")
-                principle = EkomPrinciple(**principle_data)
+                principle = EkomPrinciple(
+                    **principle_data,
+                    version=EKOM_VERSION,
+                    effective_date=EKOM_EFFECTIVE_DATE,
+                )
                 session.add(principle)
 
         await session.commit()

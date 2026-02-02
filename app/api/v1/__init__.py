@@ -18,6 +18,8 @@ from app.api.v1 import (
     reviews,
     documents,
     ekomforskriften,
+    audit,
+    export,
 )
 
 api_router = APIRouter(prefix="/api/v1")
@@ -39,3 +41,5 @@ api_router.include_router(
 )
 api_router.include_router(dashboard.router, prefix="/dashboard", tags=["Dashboard"])
 api_router.include_router(reports.router, prefix="/reports", tags=["Rapporter"])
+api_router.include_router(audit.router, prefix="/audit", tags=["Audit"])
+api_router.include_router(export.router, prefix="/export", tags=["Eksport"])

@@ -2,6 +2,7 @@
 Risk endpoints for NetROS.
 """
 
+from datetime import datetime, timezone
 from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, status
@@ -11,10 +12,18 @@ from sqlalchemy.orm import selectinload
 
 from app.core.deps import get_current_active_user, require_role
 from app.database import get_db
-from app.models.risk import Risk
+from app.models.risk import Risk, RiskStatus
 from app.models.user import User, UserRole
-from app.schemas.risk import RiskCreate, RiskUpdate, RiskResponse, RiskMatrix
+from app.schemas.risk import (
+    RiskCreate,
+    RiskUpdate,
+    RiskResponse,
+    RiskMatrix,
+    RiskAcceptRequest,
+    RiskAcceptResponse,
+)
 from app.services.risk_service import RiskService
+from app.services.audit_service import AuditService
 
 router = APIRouter()
 
@@ -70,7 +79,19 @@ async def create_risk(
         risk_data.owner_id = current_user.id
 
     risk_service = RiskService(db)
-    return await risk_service.create_risk(risk_data)
+    risk = await risk_service.create_risk(risk_data)
+
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_create(
+        entity_type="risk",
+        entity_id=risk.id,
+        user=current_user,
+        values={"title": risk.title, "risk_score": risk.risk_score},
+    )
+    await db.commit()
+
+    return risk
 
 
 @router.get("/matrix", response_model=RiskMatrix)
@@ -121,7 +142,7 @@ async def update_risk(
     risk_id: int,
     risk_data: RiskUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(
             require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG, UserRole.BRUKER)
@@ -129,6 +150,23 @@ async def update_risk(
     ],
 ) -> Risk:
     """Oppdater en risiko."""
+    # Get old values for audit
+    result = await db.execute(select(Risk).where(Risk.id == risk_id))
+    old_risk = result.scalar_one_or_none()
+    if not old_risk:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Risiko ikke funnet",
+        )
+
+    old_values = {
+        "title": old_risk.title,
+        "status": old_risk.status.value,
+        "likelihood": old_risk.likelihood,
+        "consequence": old_risk.consequence,
+        "risk_score": old_risk.risk_score,
+    }
+
     risk_service = RiskService(db)
     risk = await risk_service.update_risk(risk_id, risk_data)
 
@@ -138,6 +176,24 @@ async def update_risk(
             detail="Risiko ikke funnet",
         )
 
+    # Audit log
+    new_values = {
+        "title": risk.title,
+        "status": risk.status.value,
+        "likelihood": risk.likelihood,
+        "consequence": risk.consequence,
+        "risk_score": risk.risk_score,
+    }
+    audit_service = AuditService(db)
+    await audit_service.log_update(
+        entity_type="risk",
+        entity_id=risk.id,
+        user=current_user,
+        old_values=old_values,
+        new_values=new_values,
+    )
+    await db.commit()
+
     return risk
 
 
@@ -145,7 +201,7 @@ async def update_risk(
 async def delete_risk(
     risk_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG))],
+    current_user: Annotated[User, Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG))],
 ) -> None:
     """Slett en risiko."""
     result = await db.execute(select(Risk).where(Risk.id == risk_id))
@@ -156,6 +212,15 @@ async def delete_risk(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Risiko ikke funnet",
         )
+
+    # Audit log before delete
+    audit_service = AuditService(db)
+    await audit_service.log_delete(
+        entity_type="risk",
+        entity_id=risk.id,
+        user=current_user,
+        values={"title": risk.title, "risk_score": risk.risk_score},
+    )
 
     await db.delete(risk)
     await db.commit()
@@ -436,3 +501,133 @@ async def list_all_nsm_principles(
         }
         for p in principles
     ]
+
+
+# Risk Acceptance endpoints
+
+@router.post("/{risk_id}/accept", response_model=RiskAcceptResponse)
+async def accept_risk(
+    risk_id: int,
+    accept_data: RiskAcceptRequest,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[
+        User,
+        Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG)),
+    ],
+) -> RiskAcceptResponse:
+    """
+    Aksepter en risiko med begrunnelse.
+
+    Kun tilgjengelig for admin og risikoansvarlig.
+    Setter status til AKSEPTERT og lagrer hvem som aksepterte, når, og begrunnelse.
+    """
+    result = await db.execute(select(Risk).where(Risk.id == risk_id))
+    risk = result.scalar_one_or_none()
+
+    if not risk:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Risiko ikke funnet",
+        )
+
+    # Store old status for audit
+    old_status = risk.status.value
+
+    # Update risk acceptance fields
+    risk.status = RiskStatus.AKSEPTERT
+    risk.accepted_by_id = current_user.id
+    risk.accepted_at = datetime.now(timezone.utc)
+    risk.acceptance_rationale = accept_data.rationale
+    risk.acceptance_valid_until = accept_data.valid_until
+
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_approve(
+        entity_type="risk",
+        entity_id=risk.id,
+        user=current_user,
+        rationale=accept_data.rationale,
+    )
+    await audit_service.log_update(
+        entity_type="risk",
+        entity_id=risk.id,
+        user=current_user,
+        old_values={"status": old_status},
+        new_values={
+            "status": RiskStatus.AKSEPTERT.value,
+            "accepted_by_id": current_user.id,
+            "acceptance_valid_until": accept_data.valid_until.isoformat() if accept_data.valid_until else None,
+        },
+    )
+
+    await db.commit()
+    await db.refresh(risk)
+
+    return RiskAcceptResponse(
+        id=risk.id,
+        title=risk.title,
+        status=risk.status,
+        accepted_by_id=risk.accepted_by_id,
+        accepted_at=risk.accepted_at,
+        acceptance_rationale=risk.acceptance_rationale,
+        acceptance_valid_until=risk.acceptance_valid_until,
+        message=f"Risiko '{risk.title}' er akseptert",
+    )
+
+
+@router.delete("/{risk_id}/accept", status_code=status.HTTP_200_OK)
+async def revoke_risk_acceptance(
+    risk_id: int,
+    db: Annotated[AsyncSession, Depends(get_db)],
+    current_user: Annotated[
+        User,
+        Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG)),
+    ],
+) -> dict:
+    """
+    Tilbakekall akseptanse for en risiko.
+
+    Setter status tilbake til IDENTIFISERT og fjerner akseptanseinfo.
+    """
+    result = await db.execute(select(Risk).where(Risk.id == risk_id))
+    risk = result.scalar_one_or_none()
+
+    if not risk:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Risiko ikke funnet",
+        )
+
+    if risk.status != RiskStatus.AKSEPTERT:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Risiko er ikke akseptert",
+        )
+
+    # Store old values for audit
+    old_values = {
+        "status": risk.status.value,
+        "accepted_by_id": risk.accepted_by_id,
+        "acceptance_rationale": risk.acceptance_rationale,
+    }
+
+    # Clear acceptance fields
+    risk.status = RiskStatus.IDENTIFISERT
+    risk.accepted_by_id = None
+    risk.accepted_at = None
+    risk.acceptance_rationale = None
+    risk.acceptance_valid_until = None
+
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_update(
+        entity_type="risk",
+        entity_id=risk.id,
+        user=current_user,
+        old_values=old_values,
+        new_values={"status": RiskStatus.IDENTIFISERT.value, "acceptance_revoked": True},
+    )
+
+    await db.commit()
+
+    return {"message": f"Akseptanse for risiko '{risk.title}' er tilbakekalt"}

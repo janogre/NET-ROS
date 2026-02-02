@@ -15,6 +15,7 @@ from app.database import get_db
 from app.models.supplier import Supplier, AssetSupplier, SupplierType
 from app.models.user import User, UserRole
 from app.schemas.supplier import SupplierCreate, SupplierUpdate, SupplierResponse
+from app.services.audit_service import AuditService
 
 router = APIRouter()
 
@@ -55,7 +56,7 @@ async def list_suppliers(
 async def create_supplier(
     supplier_data: SupplierCreate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG)),
     ],
@@ -71,6 +72,21 @@ async def create_supplier(
         contract_expiry=supplier_data.contract_expiry,
     )
     db.add(supplier)
+    await db.flush()
+
+    # Audit log
+    audit_service = AuditService(db)
+    await audit_service.log_create(
+        entity_type="supplier",
+        entity_id=supplier.id,
+        user=current_user,
+        values={
+            "name": supplier.name,
+            "supplier_type": supplier.supplier_type.value,
+            "criticality": supplier.criticality,
+        },
+    )
+
     await db.commit()
     await db.refresh(supplier)
     return supplier
@@ -169,7 +185,7 @@ async def update_supplier(
     supplier_id: int,
     supplier_data: SupplierUpdate,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[
+    current_user: Annotated[
         User,
         Depends(require_role(UserRole.ADMIN, UserRole.RISIKOANSVARLIG)),
     ],
@@ -186,9 +202,31 @@ async def update_supplier(
             detail="Leverandør ikke funnet",
         )
 
+    # Save old values for audit
+    old_values = {
+        "name": supplier.name,
+        "criticality": supplier.criticality,
+        "contract_expiry": supplier.contract_expiry.isoformat() if supplier.contract_expiry else None,
+    }
+
     update_data = supplier_data.model_dump(exclude_unset=True)
     for field, value in update_data.items():
         setattr(supplier, field, value)
+
+    # Audit log
+    new_values = {
+        "name": supplier.name,
+        "criticality": supplier.criticality,
+        "contract_expiry": supplier.contract_expiry.isoformat() if supplier.contract_expiry else None,
+    }
+    audit_service = AuditService(db)
+    await audit_service.log_update(
+        entity_type="supplier",
+        entity_id=supplier.id,
+        user=current_user,
+        old_values=old_values,
+        new_values=new_values,
+    )
 
     await db.commit()
     await db.refresh(supplier)
@@ -199,7 +237,7 @@ async def update_supplier(
 async def delete_supplier(
     supplier_id: int,
     db: Annotated[AsyncSession, Depends(get_db)],
-    _: Annotated[User, Depends(require_role(UserRole.ADMIN))],
+    current_user: Annotated[User, Depends(require_role(UserRole.ADMIN))],
 ) -> None:
     """Slett en leverandør."""
     result = await db.execute(
@@ -212,6 +250,15 @@ async def delete_supplier(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Leverandør ikke funnet",
         )
+
+    # Audit log before delete
+    audit_service = AuditService(db)
+    await audit_service.log_delete(
+        entity_type="supplier",
+        entity_id=supplier.id,
+        user=current_user,
+        values={"name": supplier.name, "criticality": supplier.criticality},
+    )
 
     await db.delete(supplier)
     await db.commit()
